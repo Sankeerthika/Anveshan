@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Question</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/status_theme.css') }}">
+</head>
+<body>
+<div class="container" style="padding:20px;">
+    <a href="{{ url_for('student_dashboard') }}" class="btn btn--primary" style="position:fixed; top:18px; right:18px; z-index:60;">⬅ Back</a>
+    <div class="card" style="padding:16px; max-width:720px; margin:40px auto;">
+        <h3 style="color:var(--muted);">Edit Your Question</h3>
+        <p><strong>Event ID:</strong> {{ q.event_id }}</p>
+        <form method="POST">
+            <textarea name="question" rows="6" style="width:100%; padding:8px; border-radius:6px;">{{ q.question }}</textarea>
+            <button class="btn btn--primary" style="margin-top:8px;">Save Changes</button>
+        </form>
+    </div>
+</div>
+</body>
+</html>

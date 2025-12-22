@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anveshan Register</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/aurora.css') }}">
+</head>
+<body>
+    <div class="card" style="max-width:520px;margin:60px auto;padding:26px;">
+        <h2 style="text-align:center; color:#102233;">Create Account</h2>
+        <form method="post" action="{{ url_for('auth.register') }}">
+            <input type="text" name="name" placeholder="Full Name" required style="width:100%; margin:10px 0;">
+            <input type="email" name="email" placeholder="Email" required style="width:100%; margin:10px 0;">
+            <input type="password" name="password" placeholder="Password" required style="width:100%; margin:10px 0;">
+            <select name="role" required style="width:100%; margin:10px 0;">
+                <option value="" disabled selected>Select Role</option>
+                <option value="student">Student</option>
+                <option value="club">Club / Organization</option>
+            </select>
+            <button class="btn" style="width:100%; margin-top:8px;">Register</button>
+        </form>
+        <div style="text-align:center;margin-top:12px; color:#102233;">
+            <p>Already have an account? <a href="{{ url_for('auth.login') }}">Login here</a></p>
+        </div>
+    </div>
+</body>
+</html>

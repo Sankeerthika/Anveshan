@@ -1,0 +1,53 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Registered Students</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/status_theme.css') }}">
+</head>
+<body>
+
+<div class="container">
+    <h2 style="color:#e7eefc; text-align:center;">Registered Students</h2>
+
+    <div class="card" style="margin-top:16px; padding:18px;">
+        <form method="GET" style="display:flex; gap:8px; flex-wrap:wrap;">
+            <input name="year" placeholder="Year">
+            <input name="branch" placeholder="Branch">
+            <input name="domain" placeholder="Domain">
+            <button class="btn secondary" type="submit">Filter</button>
+            <a href="{{ url_for('club.download_registrations', hackathon_id=hackathon_id) }}" class="btn" style="margin-left:auto;">Download CSV</a>
+        </form>
+
+        <div style="margin-top:14px; overflow:auto;">
+            <table style="width:100%; border-collapse:collapse;">
+                <thead>
+                    <tr style="color:#cfe6ff; text-align:left;">
+                        <th style="padding:8px;">Name</th>
+                        <th style="padding:8px;">Email</th>
+                        <th style="padding:8px;">Branch</th>
+                        <th style="padding:8px;">Year</th>
+                        <th style="padding:8px;">Domain</th>
+                        <th style="padding:8px;">Registered At</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for s in students %}
+                    <tr style="border-top:1px solid rgba(255,255,255,0.03);">
+                        <td style="padding:8px;">{{ s.name }}</td>
+                        <td style="padding:8px;">{{ s.email }}</td>
+                        <td style="padding:8px;">{{ s.branch }}</td>
+                        <td style="padding:8px;">{{ s.year }}</td>
+                        <td style="padding:8px;">{{ s.domain }}</td>
+                        <td style="padding:8px;">{{ s.registered_at }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

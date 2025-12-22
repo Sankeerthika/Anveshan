@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Join Requests for Your Team</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/status_theme.css') }}">
+</head>
+<body>
+
+<header style="padding:18px 0;">
+    <div class="container" style="display:flex; justify-content:space-between;">
+        <h2 style="color:var(--muted);">Join Requests for Your Team</h2>
+        <a href="{{ url_for('student_dashboard') }}" class="btn btn--primary" style="position:fixed; top:18px; right:18px; z-index:60;">⬅ Back</a>
+    </div>
+</header>
+
+<div class="container">
+{% if join_requests %}
+    {% for jr in join_requests %}
+    <div class="card" style="margin-bottom:14px;">
+
+        <h3 style="color:var(--muted);">
+            Event: {{ jr.event_title }}
+        </h3>
+
+        <p><strong>Name:</strong> {{ jr.name }}</p>
+        <p><strong>Email:</strong> {{ jr.email }}</p>
+        <p><strong>Branch:</strong> {{ jr.branch }}</p>
+        <p><strong>Year:</strong> {{ jr.year }}</p>
+        <p><strong>Phone/LinkedIn:</strong> {{ jr.phone }}</p>
+
+        <!-- ✅ ALWAYS SHOW BUTTONS -->
+        <div style="margin-top:10px;">
+            <form method="POST"
+                  action="{{ url_for('find_team.handle_join_request', request_id=jr.id) }}"
+                  style="display:inline-block;">
+                <input type="hidden" name="action" value="accept">
+                <button class="btn" style="background:var(--success);">
+                    Accept
+                </button>
+            </form>
+
+            <form method="POST"
+                  action="{{ url_for('find_team.handle_join_request', request_id=jr.id) }}"
+                  style="display:inline-block; margin-left:8px;">
+                <input type="hidden" name="action" value="reject">
+                <button class="btn" style="background:var(--danger);">
+                    Reject
+                </button>
+            </form>
+        </div>
+
+    </div>
+    {% endfor %}
+{% else %}
+    <p>No join requests yet.</p>
+{% endif %}
+</div>
+
+</body>
+</html>
+
+

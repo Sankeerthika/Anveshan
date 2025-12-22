@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/status_theme.css') }}">
+
+    <!--<style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #e0e5ec;
+            margin: 0;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+            box-shadow: inset 5px 5px 10px #bebebe,
+                        inset -5px -5px 10px #ffffff;
+        }
+
+        header h2 {
+            margin: 0;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 15px;
+        }
+
+        .dashboard {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            padding: 40px;
+            justify-content: center;
+        }
+
+        .event-card {
+            width: 350px;
+            padding: 20px;
+            border-radius: 20px;
+            background: #e0e5ec;
+            box-shadow: 5px 5px 15px #bebebe,
+                        -5px -5px 15px #ffffff;
+        }
+
+        .event-card h3 {
+            margin-top: 0;
+        }
+
+        .btn {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 10px 20px;
+            border-radius: 12px;
+            background: #e0e5ec;
+            box-shadow: 5px 5px 10px #bebebe,
+                        -5px -5px 10px #ffffff;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            color: #333;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .btn:hover {
+            box-shadow: inset 5px 5px 10px #bebebe,
+                        inset -5px -5px 10px #ffffff;
+        }
+
+        .registered {
+            color: green;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .info {
+            font-size: 14px;
+            margin: 5px 0;
+        }
+    </style>-->
+</head>
+
+<body>
+
+<header style="position:relative; padding:18px 0;">
+    <h2 class="title" style="position:absolute; left:18px; top:18px; margin:0;">Welcome, Student</h2>
+    <div class="header-actions" style="position:absolute; right:18px; top:18px;">
+        <a href="{{ url_for('find_team.find_team') }}" class="btn btn--info">Find Team</a>
+        <a href="{{ url_for('find_team.my_team_requests') }}" class="btn btn--primary">View Join Requests</a>
+        <a href="{{ url_for('find_team.my_join_requests') }}" class="btn btn--warn">My Join Requests</a>
+        <a href="{{ url_for('auth.logout') }}" class="btn btn--danger">Logout</a>
+    </div>
+</header>
+
+<div class="container">
+    <div class="dashboard">
+
+{% if events and events|length > 0 %}
+    {% for event in events %}
+        <div class="event-card">
+            <h3>{{ event.title }}</h3>
+
+            {% if event.event_date %}
+                <p class="info"><strong>Date:</strong> {{ event.event_date }}</p>
+            {% endif %}
+
+            {% if event.deadline %}
+                <p class="info"><strong>Deadline:</strong> {{ event.deadline }}</p>
+            {% endif %}
+
+            <p class="info"><strong>Organizer:</strong>
+                {% if event.club_name %}
+                    {{ event.club_name }}
+                {% elif event.organizer %}
+                    {{ event.organizer }}
+                {% else %}
+                    N/A
+                {% endif %}
+            </p>
+
+            {% if event.organising_department %}
+                <p class="info"><strong>Department:</strong> {{ event.organising_department }}</p>
+            {% endif %}
+
+            {% if event.team %}
+                <p class="registered">✔ Team Created</p>
+
+                <p class="info"><strong>Team Name:</strong> {{ event.team.team_name }}</p>
+                <p class="info"><strong>Domain:</strong> {{ event.team.domain }}</p>
+
+                <p class="info">
+                    <strong>Members Joined:</strong>
+                    {{ event.team.members_count }} / {{ event.team.required_size }}
+                </p>
+
+                <p class="info">
+                    <strong>Pending Join Requests:</strong>
+                    {{ event.team.pending_requests }}
+                </p>
+
+            {% else %}
+                <a href="{{ url_for('events.open_registration_form', event_id=event.id) }}" class="btn">
+                    Join Hackathon
+                </a>
+
+                <!-- Doubts / Questions -->
+                <div style="margin-top:12px;">
+                    <form method="POST" action="{{ url_for('events.submit_question') }}">
+                        <input type="hidden" name="event_id" value="{{ event.id }}">
+                        <textarea name="question" rows="2" placeholder="Have a doubt? Ask the club..." style="width:100%; padding:8px; border-radius:6px; margin-top:8px;"></textarea>
+                        <button class="btn btn--primary" type="submit" style="margin-top:8px;">Submit Question</button>
+                    </form>
+                </div>
+
+                {% if event.questions and event.questions|length > 0 %}
+                <div style="margin-top:12px;">
+                    <h4 style="margin:6px 0; color:var(--muted);">Your Questions</h4>
+                    {% for q in event.questions %}
+                        <div class="card" style="padding:8px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:flex-start;">
+                            <div style="flex:1;">
+                                <p style="margin:0;"><strong>Q:</strong> {{ q.question }}</p>
+                                {% if q.answer %}
+                                    <p style="margin:6px 0 0; color:var(--muted);"><strong>Answer:</strong> {{ q.answer }}</p>
+                                {% else %}
+                                    <p style="margin:6px 0 0; color:orange;"><em>Awaiting answer from club</em></p>
+                                {% endif %}
+                            </div>
+                            <div style="margin-left:12px;">
+                                <a href="{{ url_for('events.edit_question', qid=q.id) }}" class="btn btn--info" style="padding:6px 10px; font-size:12px;">Edit</a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            {% endif %}
+        </div>
+    {% endfor %}
+{% else %}
+    <p style="text-align:center; width:100%;">No hackathons available.</p>
+{% endif %}
+
+</div>
+
+</body>
+</html>
+
+
+
+

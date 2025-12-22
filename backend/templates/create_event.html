@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Create Hackathon</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/status_theme.css') }}">
+
+    <!--<style>
+        body {
+            background: #e0e5ec;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .container {
+            width: 450px;
+            margin: 50px auto;
+            padding: 30px;
+            border-radius: 20px;
+            background: #e0e5ec;
+            box-shadow: 5px 5px 15px #bebebe,
+                        -5px -5px 15px #ffffff;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 10px;
+            border: none;
+            background: #e0e5ec;
+            box-shadow: inset 3px 3px 6px #bebebe,
+                        inset -3px -3px 6px #ffffff;
+        }
+
+        button {
+            width: 100%;
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            background: #e0e5ec;
+            box-shadow: 5px 5px 10px #bebebe,
+                        -5px -5px 10px #ffffff;
+        }
+
+        button:hover {
+            box-shadow: inset 5px 5px 10px #bebebe,
+                        inset -5px -5px 10px #ffffff;
+        }
+
+        .checkbox-group label {
+            display: block;
+            margin: 5px 0;
+        }
+
+        .discount-section {
+            margin-top: 10px;
+        }
+
+        .back {
+            text-align: center;
+            margin-top: 15px;
+        }
+    </style>-->
+
+    <script>
+        function toggleDiscount() {
+            const checkbox = document.getElementById("girls_discount_enabled");
+            const discountInput = document.getElementById("girls_team_discount");
+
+            discountInput.disabled = !checkbox.checked;
+            if (!checkbox.checked) {
+                discountInput.value = 0;
+            }
+        }
+    </script>
+</head>
+
+<body>
+
+<header style="padding:18px 0; position:relative;">
+    <div class="container" style="display:flex; justify-content:space-between; align-items:center;">
+        <h2 class="title">Create Hackathon</h2>
+        <a href="{{ url_for('club.club_dashboard') }}" class="btn btn--primary" style="position:fixed; top:18px; right:18px; z-index:60;">⬅ Back to Dashboard</a>
+    </div>
+</header>
+
+    <div class="container">
+    <div class="card" style="margin:16px auto; max-width:900px; border:1px solid #000;">
+        <form method="POST">
+            <div class="form-grid">
+                <div>
+                    <label>Hackathon Title</label>
+                    <input type="text" name="title" required>
+                </div>
+
+                <div>
+                    <label>Organising Club</label>
+                    <input type="text" name="club_name" required>
+                </div>
+
+                <div style="grid-column:1/-1;">
+                    <label>Organising Department</label>
+                    <input type="text" name="organising_department" required>
+                </div>
+
+                <div style="grid-column:1/-1;">
+                    <label>Domains</label>
+                    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:8px;">
+                        <label><input type="checkbox" name="domains[]" value="AI"> AI</label>
+                        <label><input type="checkbox" name="domains[]" value="Web"> Web Development</label>
+                        <label><input type="checkbox" name="domains[]" value="ML"> Machine Learning</label>
+                        <label><input type="checkbox" name="domains[]" value="Blockchain"> Blockchain</label>
+                        <label><input type="checkbox" name="domains[]" value="Cyber Security"> Cyber Security</label>
+                        <label><input type="checkbox" name="domains[]" value="IoT"> IoT</label>
+                    </div>
+                </div>
+
+                <div>
+                    <label>Registration Deadline</label>
+                    <input type="date" name="deadline" required>
+                </div>
+
+                <div>
+                    <label>Registration Fee (INR)</label>
+                    <input type="number" name="registration_fee" min="0" value="0" required>
+                </div>
+
+                <div>
+                    <label>Minimum Team Size</label>
+                    <input type="number" name="min_team_size" min="1" value="1" required>
+                </div>
+
+                <div>
+                    <label>Maximum Team Size</label>
+                    <input type="number" name="max_team_size" min="1" value="5" required>
+                </div>
+
+                <div style="grid-column:1/-1; display:flex; gap:12px; align-items:center; margin-top:6px;">
+                    <label style="display:flex; align-items:center; gap:8px;">
+                        <input type="checkbox"
+                               name="girls_discount_enabled"
+                               id="girls_discount_enabled"
+                               onchange="toggleDiscount()">
+                        Enable Girls-only Team Discount
+                    </label>
+
+                    <div style="margin-left:auto; display:flex; gap:8px; align-items:center;">
+                        <label style="margin:0;">Girls Team Discount Amount (INR)</label>
+                        <input type="number"
+                               name="girls_team_discount"
+                               id="girls_team_discount"
+                               min="0"
+                               value="0"
+                               disabled
+                               style="width:120px;">
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top:16px; text-align:right;">
+                <button class="btn btn--primary">Create Event</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+</body>
+</html>

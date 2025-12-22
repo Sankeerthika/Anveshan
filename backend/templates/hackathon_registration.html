@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Hackathon Registration</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/status_theme.css') }}">
+
+    <!--<style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #e0e5ec;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 30px;
+            border-radius: 25px;
+            background: #e0e5ec;
+            box-shadow: 10px 10px 30px #bebebe,
+                        -10px -10px 30px #ffffff;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        h3 {
+            margin-top: 30px;
+            color: #444;
+        }
+
+        label {
+            font-weight: 500;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0 15px 0;
+            border-radius: 12px;
+            border: none;
+            background: #e0e5ec;
+            box-shadow: inset 5px 5px 10px #bebebe,
+                        inset -5px -5px 10px #ffffff;
+            outline: none;
+        }
+
+        textarea {
+            resize: none;
+            height: 80px;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border-radius: 15px;
+            background: #e0e5ec;
+            box-shadow: 5px 5px 10px #bebebe,
+                        -5px -5px 10px #ffffff;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+
+        .btn:hover {
+            box-shadow: inset 5px 5px 10px #bebebe,
+                        inset -5px -5px 10px #ffffff;
+        }
+
+        .member-box {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 15px;
+            background: #e0e5ec;
+            box-shadow: inset 3px 3px 8px #bebebe,
+                        inset -3px -3px 8px #ffffff;
+        }
+    </style>-->
+</head>
+
+<body>
+
+<div class="container">
+    <h2>Hackathon Registration</h2>
+
+    <form method="POST" action="{{ url_for('events.submit_registration') }}" enctype="multipart/form-data">
+        <input type="hidden" name="event_id" value="{{ event_id }}">
+
+        <h3>Team Details</h3>
+        <label>Team Name</label>
+        <input type="text" name="team_name" required>
+
+        <label>Project Title</label>
+        <input type="text" name="project_title" required>
+
+        <label>Domain</label>
+        <select name="domain" required>
+            <option value="">Select</option>
+            <option>AI</option>
+            <option>Web Development</option>
+            <option>Blockchain</option>
+            <option>IoT</option>
+            <option>Cyber Security</option>
+        </select>
+
+        <h3>Team Lead Details</h3>
+        <div class="row">
+            <div>
+                <label>Name</label>
+                <input type="text" name="lead_name" required>
+            </div>
+            <div>
+                <label>Email</label>
+                <input type="email" name="lead_email" required>
+            </div>
+            <div>
+                <label>Phone</label>
+                <input type="text" name="lead_phone" required>
+            </div>
+            <div>
+                <label>Year</label>
+                <select name="lead_year" required>
+                    <option>1st</option>
+                    <option>2nd</option>
+                    <option>3rd</option>
+                    <option>4th</option>
+                </select>
+            </div>
+        </div>
+
+        <h3>Team Members</h3>
+
+        {% for i in range(1,5) %}
+        <div class="member-box">
+            <label>Member {{ i }} Name</label>
+            <input type="text" name="member_name_{{ i }}">
+
+            <label>Email</label>
+            <input type="email" name="member_email_{{ i }}">
+
+            <label>Year</label>
+            <select name="member_year_{{ i }}">
+                <option value="">Select</option>
+                <option>1st</option>
+                <option>2nd</option>
+                <option>3rd</option>
+                <option>4th</option>
+            </select>
+        </div>
+        {% endfor %}
+
+        <h3>Payment</h3>
+        <label>Upload Payment Screenshot</label>
+        <input type="file" name="payment_proof" required>
+
+        <label>WhatsApp Group Link</label>
+        <input type="url" name="whatsapp_link" placeholder="Provided by organizer">
+
+        <button type="submit" class="btn">Submit Registration</button>
+    </form>
+</div>
+
+</body>
+</html>

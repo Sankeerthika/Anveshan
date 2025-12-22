@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Create Hackathon</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/status_theme.css') }}">
+</head>
+<body>
+<div class="container">
+    <div class="card" style="margin-top:20px;">
+        <h2 style="color:#e7eefc;">Create Hackathon</h2>
+        <form method="POST">
+            <div class="form-grid" style="margin-top:12px;">
+                <input name="title" placeholder="Hackathon Title" required>
+                <input name="domain" placeholder="Domain (AI, Web, IoT)" required>
+                <input name="branches" placeholder="Allowed Branches (CSE,ECE)" required>
+                <input name="years" placeholder="Allowed Years (2,3,4)" required>
+                <input type="number" name="team_size" placeholder="Team Size" required>
+                <input type="date" name="deadline" required>
+            </div>
+
+            <div style="margin-top:14px; text-align:right;">
+                <button class="btn">Create Hackathon</button>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>

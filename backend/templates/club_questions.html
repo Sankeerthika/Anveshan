@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Club Questions</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/status_theme.css') }}">
+</head>
+<body>
+<header style="padding:18px 0;">
+    <div class="container" style="display:flex; justify-content:space-between;">
+        <h2 style="color:var(--muted);">Questions From Students</h2>
+        <a href="{{ url_for('club.club_dashboard') }}" class="btn btn--primary" style="position:fixed; top:18px; right:18px; z-index:60;">⬅ Back</a>
+    </div>
+</header>
+
+<div class="container">
+    {% if questions and questions|length > 0 %}
+        {% for q in questions %}
+            <div class="card" style="margin-bottom:12px;">
+                <h4 style="margin:0 0 6px 0; color:var(--muted);">{{ q.event_title }}</h4>
+                <p style="margin:0;"><strong>From:</strong> {{ q.student_email }}</p>
+                <p style="margin:6px 0 0;"><strong>Q:</strong> {{ q.question }}</p>
+                {% if q.status == 'answered' %}
+                    <p style="margin:6px 0 0; color:var(--muted);"><strong>Answer:</strong> {{ q.answer }}</p>
+                {% else %}
+                    <form method="POST" action="{{ url_for('events.answer_question', qid=q.id) }}" style="margin-top:8px;">
+                        <textarea name="answer" rows="3" style="width:100%; padding:8px; border-radius:6px;"></textarea>
+                        <button class="btn btn--primary" style="margin-top:8px;">Submit Answer</button>
+                    </form>
+                {% endif %}
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>No questions yet.</p>
+    {% endif %}
+</div>
+
+</body>
+</html>

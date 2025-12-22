@@ -1,0 +1,81 @@
+/* Status-focused UI theme */
+:root{
+  --bg: #ffffff;
+  --page-pad: 28px;
+  --card-bg: #ffffff;
+  --muted: #102233;
+  --muted-2: rgba(16,34,51,0.7);
+  --accent: linear-gradient(90deg,#5b8cff,#2bd2c9);
+  --success: #2ecc71;
+  --danger: #ff6b6b;
+  --warning: #ffb86b;
+  --info: #5b8cff;
+}
+
+html,body{ height:100%; margin:0; font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial; background:var(--bg); color:var(--muted); }
+.container{ max-width:1100px; margin:var(--page-pad) auto; padding:0 18px; }
+.card{ background:var(--card-bg); border:1px solid rgba(16,34,51,0.06); border-radius:12px; padding:18px; box-shadow:0 6px 20px rgba(16,34,51,0.04); }
+
+/* Header */
+header .title{ font-size:20px; font-weight:700; color:var(--muted); }
+
+/* Global header layout */
+header{ display:flex; justify-content:space-between; align-items:center; padding:18px 0; }
+.header-actions{ display:flex; gap:12px; align-items:center; }
+
+/* Quick stats (horizontal) */
+.stats{ display:flex; gap:16px; align-items:stretch; flex-wrap:wrap; margin:12px 0; }
+.stat-box{ flex:1 1 180px; min-width:160px; padding:18px; border-radius:10px; text-align:center; background:var(--card-bg); border:1px solid rgba(16,34,51,0.06); box-shadow:0 8px 20px rgba(16,34,51,0.04); }
+.stat-box h2{ margin:0; font-size:22px; color:var(--muted); }
+.stat-box p{ margin:6px 0 0; color:var(--muted-2); font-weight:600; }
+
+/* Form */
+.form-grid{ display:grid; grid-template-columns: repeat(2,minmax(220px,1fr)); gap:14px; }
+label{ display:block; margin-bottom:6px; color:var(--muted-2); font-weight:600; }
+input, select, textarea{ width:100%; padding:10px 12px; border-radius:8px; border:1px solid rgba(16,34,51,0.08); background:#fff; color:var(--muted-2); }
+
+/* Buttons */
+.btn{ display:inline-block; padding:10px 14px; border-radius:10px; border:none; color:#fff; background:var(--accent); font-weight:700; text-decoration:none; }
+.btn.secondary{ background:transparent; border:1px solid rgba(16,34,51,0.06); color:var(--muted-2); }
+
+/* Status badges */
+.badge{ display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border-radius:999px; font-weight:700; font-size:13px; color:#fff; }
+.badge--success{ background:var(--success); box-shadow:0 6px 14px rgba(46,204,113,0.14); }
+.badge--danger{ background:var(--danger); box-shadow:0 6px 14px rgba(255,107,107,0.14); }
+.badge--warning{ background:var(--warning); box-shadow:0 6px 14px rgba(255,184,107,0.12); color:#102233; }
+.badge--info{ background:var(--info); box-shadow:0 6px 14px rgba(91,140,255,0.12); }
+
+/* Small dot */
+.badge .dot{ width:8px; height:8px; border-radius:50%; background:rgba(255,255,255,0.9); opacity:0.18; margin-right:6px; }
+
+/* Responsive */
+@media (max-width:760px){ .form-grid{ grid-template-columns: 1fr; } }
+
+/* Dashboard / Event cards horizontal list */
+.dashboard{ display:flex; gap:18px; flex-wrap:wrap; align-items:flex-start; padding:18px 0; }
+.event-card{ flex:0 1 300px; min-width:240px; border-radius:12px; padding:16px; background:#fff; border:1px solid rgba(16,34,51,0.04); box-shadow:0 8px 22px rgba(16,34,51,0.04); }
+.event-card h3{ margin-top:0; color:var(--muted); }
+.event-card .info{ color:var(--muted-2); font-size:14px; margin:6px 0; }
+
+@media (max-width:760px){ .dashboard{ gap:12px; padding:12px 0; } }
+
+/* Button color variants */
+.btn--primary{ background:linear-gradient(90deg,#5b8cff,#2bd2c9); box-shadow:0 10px 24px rgba(91,140,255,0.12); }
+.btn--info{ background:var(--info); box-shadow:0 10px 20px rgba(91,140,255,0.12); }
+.btn--warn{ background:var(--warning); color:var(--muted); box-shadow:0 8px 18px rgba(255,184,107,0.12); }
+.btn--danger{ background:var(--danger); box-shadow:0 8px 18px rgba(255,107,107,0.12); }
+.btn--ghost{ background:transparent; color:var(--muted-2); border:1px solid rgba(16,34,51,0.06); }
+
+/* Tables inside cards */
+.card .table{ width:100%; border-collapse:collapse; margin:0; }
+.card .table th, .card .table td{ padding:12px 14px; border-bottom:1px solid rgba(16,34,51,0.06); text-align:left; vertical-align:middle; color:var(--muted-2); }
+.card .table th{ font-weight:700; color:var(--muted); font-size:14px; }
+.card .table td{ font-size:13px; }
+.card .table tr:hover td{ background:rgba(91,140,255,0.02); }
+.card .table td:last-child{ white-space:normal; max-width:320px; }
+.empty{ color:var(--muted-2); padding:18px 0; }
+
+/* Black-bordered emphasis card (use for registration pages) */
+.card--black-border{ border:1px solid #000 !important; }
+.card--black-border .table th,
+.card--black-border .table td{ color:var(--muted); }

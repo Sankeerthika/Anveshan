@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Join Team</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/status_theme.css') }}">
+
+    <!--<style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #e0e5ec;
+            margin: 0;
+        }
+
+        header {
+            padding: 20px 40px;
+            box-shadow: inset 5px 5px 10px #bebebe,
+                        inset -5px -5px 10px #ffffff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .container {
+            padding: 40px;
+            max-width: 800px;
+            margin: auto;
+        }
+
+        .card {
+            background: #e0e5ec;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 5px 5px 15px #bebebe,
+                        -5px -5px 15px #ffffff;
+        }
+
+        h2 {
+            margin-top: 0;
+        }
+
+        .team-info {
+            margin-bottom: 30px;
+            padding: 20px;
+            border-radius: 15px;
+            background: #e0e5ec;
+            box-shadow: inset 5px 5px 10px #bebebe,
+                        inset -5px -5px 10px #ffffff;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            font-weight: 600;
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 12px;
+            border: none;
+            background: #e0e5ec;
+            box-shadow: inset 5px 5px 10px #bebebe,
+                        inset -5px -5px 10px #ffffff;
+            outline: none;
+        }
+
+        .btn {
+            margin-top: 15px;
+            padding: 12px 20px;
+            border-radius: 12px;
+            background: #e0e5ec;
+            box-shadow: 5px 5px 10px #bebebe,
+                        -5px -5px 10px #ffffff;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn:hover {
+            box-shadow: inset 5px 5px 10px #bebebe,
+                        inset -5px -5px 10px #ffffff;
+        }
+    </style>-->
+</head>
+
+<body>
+
+<header style="padding:18px 0;">
+    <div class="container" style="display:flex; justify-content:space-between; align-items:center;">
+        <h2 class="title" style="margin:0;">Join Team</h2>
+        <a href="{{ url_for('find_team.find_team') }}" class="btn btn--primary" style="position:fixed; top:18px; right:18px; z-index:60;">⬅ Back</a>
+    </div>
+</header>
+
+<div class="container">
+    <div class="card" style="margin-top:18px;">
+        <div class="team-info" style="margin-bottom:14px;">
+            <h3 style="color:var(--muted);">{{ team_request.name }}'s Team</h3>
+            <p><strong>Hackathon:</strong> {{ team_request.event_title }}</p>
+            <p><strong>Domain:</strong> {{ team_request.domain }}</p>
+            <p><strong>Team Size Needed:</strong> {{ team_request.required_size }}</p>
+        </div>
+
+        <form method="POST">
+            <div class="form-group">
+                <label style="color:var(--muted);">Your Name</label>
+                <input type="text" name="name" required>
+            </div>
+
+            <div class="form-group">
+                <label style="color:var(--muted);">Phone Number or LinkedIn URL</label>
+                <input type="text" name="phone" placeholder="Phone or LinkedIn profile" required>
+            </div>
+
+            <div class="form-group">
+                <label style="color:var(--muted);">Branch (optional)</label>
+                <input type="text" name="branch">
+            </div>
+
+            <div class="form-group">
+                <label style="color:var(--muted);">Year (optional)</label>
+                <input type="text" name="year">
+            </div>
+
+            <button type="submit" class="btn btn--primary">Send Join Request</button>
+        </form>
+    </div>
+
+</div>
+
+</body>
+</html>

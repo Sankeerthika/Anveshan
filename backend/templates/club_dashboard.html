@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Club Dashboard</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/status_theme.css') }}">
+
+<!---    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #e0e5ec;
+            margin: 0;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+            box-shadow: inset 5px 5px 10px #bebebe,
+                        inset -5px -5px 10px #ffffff;
+        }
+
+        header h2 {
+            margin: 0;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 15px;
+        }
+
+        .container {
+            padding: 40px;
+            max-width: 1200px;
+            margin: auto;
+        }
+
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+        }
+
+        .card {
+            background: #e0e5ec;
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 5px 5px 15px #bebebe,
+                        -5px -5px 15px #ffffff;
+        }
+
+        .card h3 {
+            margin-top: 0;
+        }
+
+        .btn {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 10px 20px;
+            border-radius: 12px;
+            background: #e0e5ec;
+            box-shadow: 5px 5px 10px #bebebe,
+                        -5px -5px 10px #ffffff;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            color: #333;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .btn:hover {
+            box-shadow: inset 5px 5px 10px #bebebe,
+                        inset -5px -5px 10px #ffffff;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .stat-box {
+            flex: 1;
+            min-width: 200px;
+            padding: 20px;
+            border-radius: 18px;
+            background: #e0e5ec;
+            text-align: center;
+            box-shadow: inset 5px 5px 10px #bebebe,
+                        inset -5px -5px 10px #ffffff;
+        }
+
+        .stat-box h2 {
+            margin: 0;
+            color: #333;
+        }
+
+        .stat-box p {
+            margin: 5px 0 0;
+            font-size: 14px;
+        }
+    </style>-->
+    
+
+</head>
+
+<body>
+
+<header>
+    <h2 class="title">Welcome, Club / Organization</h2>
+
+    <div class="header-actions">
+        <a href="{{ url_for('auth.logout') }}" class="btn btn--primary">Logout</a>
+    </div>
+</header>
+
+<div class="container">
+
+    <!-- QUICK STATS -->
+    <div class="section">
+        <div class="stats">
+            <div class="stat-box">
+                <h2>{{ total_events }}</h2>
+                <p>Hackathons Created</p>
+            </div>
+
+            <div class="stat-box">
+                <h2>{{ total_students }}</h2>
+                <p>Total Registrations</p>
+            </div>
+
+            <div class="stat-box">
+                <h2>{{ active_events }}</h2>
+                <p>Active Hackathons</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ACTION CARDS -->
+    <div class="section">
+        <div class="card-grid">
+
+            <!-- CREATE HACKATHON -->
+            <div class="card">
+                <h3>Create Hackathon</h3>
+                <p>Create and publish a new hackathon for students.</p>
+                <a href="{{ url_for('events.create_event') }}" class="btn">
+                    Create Hackathon
+                </a>
+            </div>
+
+            <!-- VIEW REGISTRATIONS -->
+            <div class="card">
+                <h3>View Student Registrations</h3>
+                <p>View and filter student registrations by year, branch, or domain.</p>
+                <a href="{{ url_for('events.view_registrations') }}" class="btn">
+                    View & Filter Registrations
+                </a>
+            </div>
+
+            <!-- DOWNLOAD DATA -->
+            <div class="card">
+                <h3>Download Data</h3>
+                <p>Download student registration data.</p>
+                <a href="{{ url_for('events.download_registrations') }}" class="btn">
+                    Download CSV
+                </a>
+            </div>
+
+            <!-- VIEW QUESTIONS -->
+            <div class="card">
+                <h3>Student Questions</h3>
+                <p>View and answer questions from students about your hackathons.</p>
+                <a href="{{ url_for('club.club_questions') }}" class="btn">
+                    View Questions
+                </a>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- RECENT QUESTIONS -->
+    {% if recent_questions and recent_questions|length > 0 %}
+    <div class="section">
+        <h3>Recent Questions</h3>
+        <div class="card-grid">
+            {% for q in recent_questions %}
+            <div class="card">
+                <h4>{{ q.event_title }}</h4>
+                <p><strong>From:</strong> {{ q.student_email }}</p>
+                <p><strong>Question:</strong> {{ q.question|truncate(100) }}</p>
+                <p><strong>Status:</strong> 
+                    <span style="color: {% if q.status == 'answered' %}#4CAF50{% else %}#FF9800{% endif %};">
+                        {{ q.status|title }}
+                    </span>
+                </p>
+                <a href="{{ url_for('club.answer_question', qid=q.id) }}" class="btn">
+                    {% if q.status == 'answered' %}View{% else %}Answer{% endif %}
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+</body>
+</html>

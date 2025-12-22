@@ -1,0 +1,35 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Team</title>
+	<link rel="stylesheet" href="{{ url_for('static', filename='css/status_theme.css') }}">
+</head>
+<body>
+
+<header style="padding:18px 0;">
+	<div class="container" style="display:flex; justify-content:space-between; align-items:center;">
+		<h2 style="color:#e7eefc; margin:0;">Team</h2>
+		<a href="{{ url_for('find_team.find_team') }}" class="btn secondary">Back</a>
+	</div>
+</header>
+
+<div class="container">
+	<div class="card" style="margin-top:16px;">
+		<h3 style="color:#e7eefc;">{{ team.team_name }}</h3>
+		<p><strong>Domain:</strong> {{ team.domain }}</p>
+		<p><strong>Members:</strong></p>
+		<ul>
+			{% for m in team.members %}
+				<li>{{ m.name }} — {{ m.branch }} (Year {{ m.year }})</li>
+			{% endfor %}
+		</ul>
+		<div style="margin-top:12px;">
+			<a href="#" class="btn">Message</a>
+		</div>
+	</div>
+</div>
+
+</body>
+</html>

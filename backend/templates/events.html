@@ -1,0 +1,40 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Events</title>
+	<link rel="stylesheet" href="{{ url_for('static', filename='css/aurora.css') }}">
+</head>
+<body>
+
+<header style="padding:18px 0;">
+	<div class="container" style="display:flex; justify-content:space-between; align-items:center;">
+		<h2 style="color:#e7eefc; margin:0;">Events</h2>
+		<a href="{{ url_for('events.create_event') }}" class="btn">Create Event</a>
+	</div>
+</header>
+
+<div class="container">
+	<div class="card" style="margin-top:16px;">
+		<div class="dashboard">
+			{% if events and events|length > 0 %}
+				{% for event in events %}
+					<div class="event-card">
+						<h3 style="color:#e7eefc;">{{ event.title }}</h3>
+						{% if event.deadline %}
+							<p><strong>Deadline:</strong> {{ event.deadline }}</p>
+						{% endif %}
+						<p><strong>Organizer:</strong> {{ event.club_name or event.organiser or 'N/A' }}</p>
+						<a href="{{ url_for('events.open_registration_form', event_id=event.id) }}" class="btn">Register</a>
+					</div>
+				{% endfor %}
+			{% else %}
+				<p style="color:#d6e6ff;">No events found.</p>
+			{% endif %}
+		</div>
+	</div>
+</div>
+
+</body>
+</html>

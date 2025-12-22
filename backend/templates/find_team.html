@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Find Team</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/status_theme.css') }}">
+
+    
+</head>
+
+<body>
+
+<header>
+    <h2>Find Team</h2>
+
+    <div>
+        <a href="{{ url_for('student_dashboard') }}" class="btn btn--primary" style="position:fixed; top:18px; right:18px; z-index:60;">
+            ⬅ Back
+        </a>
+    </div>
+</header>
+
+
+<div class="container">
+
+    <!-- CREATE TEAM REQUEST -->
+    <div class="card">
+        <h2>Create Team Request</h2>
+
+        <form method="POST">
+            <div class="form-grid">
+                <input type="text" name="name" placeholder="Your Name" required>
+
+                <select name="event_id" required>
+                    <option value="">Select Hackathon</option>
+                    {% for e in events %}
+                        <option value="{{ e.id }}">{{ e.title }}</option>
+                    {% endfor %}
+                </select>
+
+                <input type="text" name="domain" placeholder="Domain (AI, Web, etc)">
+                <input type="text" name="branch" placeholder="Branch">
+                <input type="text" name="year" placeholder="Year">
+                <input type="number" name="required_size" placeholder="Required Team Size">
+            </div>
+
+            <button type="submit" class="btn">Save Team Request</button>
+
+        </form>
+    </div>
+
+    <!-- AVAILABLE TEAMS -->
+    <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h2 style="margin:0;">Available Team Requests</h2>
+
+            <!-- filters removed per UI request -->
+        </div>
+
+        <div id="requestsContainer" class="requests" style="margin-top:18px;">
+            {% for r in requests %}
+                <div class="request-card" data-year="{{ r.year }}" data-branch="{{ r.branch|e }}" data-domain="{{ r.domain|e }}">
+                    <p><strong>{{ r.name }}</strong></p>
+                    <p><b>Hackathon:</b> {{ r.event_title }}</p>
+                    <p><b>Domain:</b> {{ r.domain }}</p>
+                    <p><b>Branch:</b> {{ r.branch }} | <b>Year:</b> {{ r.year }}</p>
+                    <p><b>Team Size Needed:</b> {{ r.required_size }}</p>
+
+                    <a href="{{ url_for('find_team.join_team', request_id=r.id) }}" class="btn">
+                        Join Team
+                    </a>
+                </div>
+            {% else %}
+                <p>No team requests yet.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+</div>
+</div>
+
+<script src="{{ url_for('static', filename='js/find_team.js') }}"></script>
+
+</body>
+</html>

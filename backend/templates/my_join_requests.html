@@ -1,0 +1,50 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>My Join Requests</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/status_theme.css') }}">
+</head>
+<body>
+
+<header style="padding:18px 0;">
+    <div class="container" style="display:flex; justify-content:space-between;">
+        <h2 style="color:var(--muted);">My Join Requests</h2>
+        <a href="{{ url_for('student_dashboard') }}" class="btn btn--primary" style="position:fixed; top:18px; right:18px; z-index:60;">⬅ Back</a>
+    </div>
+</header>
+
+<div class="container">
+{% if join_requests %}
+    {% for jr in join_requests %}
+    <div class="card" style="margin-bottom:14px;">
+        <h3 style="color:var(--muted);">
+            Team: {{ jr.team_owner }} | Event: {{ jr.event_title }}
+        </h3>
+
+        <p><strong>Name:</strong> {{ jr.name }}</p>
+        <p><strong>Branch:</strong> {{ jr.branch }}</p>
+        <p><strong>Year:</strong> {{ jr.year }}</p>
+        <p><strong>Phone/LinkedIn:</strong> {{ jr.phone }}</p>
+
+        <!-- ✅ STATUS ONLY FOR STUDENT -->
+        <p>
+            Status:
+            {% if jr.status|lower == 'accepted' %}
+                <span class="badge badge--success">Accepted</span>
+            {% elif jr.status|lower == 'rejected' %}
+                <span class="badge badge--danger">Rejected</span>
+            {% else %}
+                <span class="badge badge--warning">Pending</span>
+            {% endif %}
+        </p>
+    </div>
+    {% endfor %}
+{% else %}
+    <p>No join requests yet.</p>
+{% endif %}
+</div>
+
+</body>
+</html>
