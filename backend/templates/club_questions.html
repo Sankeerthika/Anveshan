@@ -2,38 +2,127 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Club Questions</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/status_theme.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Club Questions | Anveshan</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/unstop_theme.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-<header style="padding:18px 0;">
-    <div class="container" style="display:flex; justify-content:space-between;">
-        <h2 style="color:var(--muted);">Questions From Students</h2>
-        <a href="{{ url_for('club.club_dashboard') }}" class="btn btn--primary" style="position:fixed; top:18px; right:18px; z-index:60;">⬅ Back</a>
-    </div>
-</header>
 
-<div class="container">
-    {% if questions and questions|length > 0 %}
-        {% for q in questions %}
-            <div class="card" style="margin-bottom:12px;">
-                <h4 style="margin:0 0 6px 0; color:var(--muted);">{{ q.event_title }}</h4>
-                <p style="margin:0;"><strong>From:</strong> {{ q.student_email }}</p>
-                <p style="margin:6px 0 0;"><strong>Q:</strong> {{ q.question }}</p>
-                {% if q.status == 'answered' %}
-                    <p style="margin:6px 0 0; color:var(--muted);"><strong>Answer:</strong> {{ q.answer }}</p>
-                {% else %}
-                    <form method="POST" action="{{ url_for('events.answer_question', qid=q.id) }}" style="margin-top:8px;">
-                        <textarea name="answer" rows="3" style="width:100%; padding:8px; border-radius:6px;"></textarea>
-                        <button class="btn btn--primary" style="margin-top:8px;">Submit Answer</button>
-                    </form>
-                {% endif %}
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <a href="{{ url_for('club.club_dashboard') }}" class="logo-container">
+                    <div class="logo-icon">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <span class="logo-text">Anveshan</span>
+                </a>
             </div>
-        {% endfor %}
-    {% else %}
-        <p>No questions yet.</p>
-    {% endif %}
-</div>
+            
+            <div class="user-profile-sidebar">
+                <div style="width: 80px; height: 80px; background: #e0e0e0; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px auto; color: #666; font-size: 30px;">
+                    <i class="fas fa-users"></i>
+                </div>
+                <h4 style="margin: 0; font-size: 1.1rem;">{{ user.name }}</h4>
+                <p style="color: #666; font-size: 0.85rem;">Organizer</p>
+            </div>
 
+            <ul class="sidebar-menu">
+                <li>
+                    <a href="{{ url_for('club.club_dashboard') }}">
+                        <i class="fas fa-th-large"></i> Dashboard
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('events.create_event') }}">
+                        <i class="fas fa-calendar-plus"></i> Manage Events
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('events.view_registrations') }}">
+                        <i class="fas fa-list-alt"></i> Registrations
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('club.club_questions') }}" class="active">
+                        <i class="fas fa-question-circle"></i> Inquiries
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('auth.logout') }}">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header" style="margin-bottom: 30px; display: flex; align-items: center;">
+                <button class="toggle-sidebar-btn" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div style="margin-left: 15px;">
+                    <h2 style="margin: 0;">Questions From Students</h2>
+                    <p style="color: var(--text-muted); margin: 0;">Manage and answer student inquiries.</p>
+                </div>
+                <a href="{{ url_for('club.club_dashboard') }}" class="btn-primary" style="margin-left: auto; text-decoration: none; display: inline-block; width: auto;">Back to Dashboard</a>
+            </div>
+
+            {% if questions and questions|length > 0 %}
+                {% for q in questions %}
+                    <div class="card" style="margin-bottom: 20px;">
+                        <h4 style="margin: 0 0 10px 0; color: var(--text-color);">{{ q.event_title }}</h4>
+                        <p style="margin: 0; font-size: 0.9rem; color: var(--text-muted);"><strong>From:</strong> {{ q.student_email }}</p>
+                        <p style="margin: 10px 0 0;"><strong>Q:</strong> {{ q.question }}</p>
+                        {% if q.status == 'answered' %}
+                            <div style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-left: 3px solid #28a745; border-radius: 4px;">
+                                <p style="margin: 0; color: var(--text-muted);"><strong>Answer:</strong> {{ q.answer }}</p>
+                            </div>
+                        {% else %}
+                            <form method="POST" action="{{ url_for('events.answer_question', qid=q.id) }}" style="margin-top: 15px;">
+                                <div class="form-group">
+                                    <textarea name="answer" rows="3" class="form-control" placeholder="Type your answer here..." style="width: 100%;"></textarea>
+                                </div>
+                                <button class="btn-primary" style="margin-top: 10px;">Submit Answer</button>
+                            </form>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="card">
+                    <p style="text-align: center; color: var(--text-muted);">No questions yet.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const container = document.querySelector('.dashboard-container');
+            
+            sidebar.classList.toggle('collapsed');
+            container.classList.toggle('sidebar-collapsed');
+            
+            // Save state to local storage
+            const isCollapsed = sidebar.classList.contains('collapsed');
+            localStorage.setItem('sidebarCollapsed', isCollapsed);
+        }
+
+        // Restore sidebar state on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const sidebar = document.getElementById('sidebar');
+            const container = document.querySelector('.dashboard-container');
+            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            
+            if (isCollapsed) {
+                sidebar.classList.add('collapsed');
+                container.classList.add('sidebar-collapsed');
+            }
+        });
+    </script>
 </body>
 </html>

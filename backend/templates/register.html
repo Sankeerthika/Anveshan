@@ -4,24 +4,45 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Anveshan Register</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/aurora.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/unstop_theme.css') }}">
 </head>
 <body>
-    <div class="card" style="max-width:520px;margin:60px auto;padding:26px;">
-        <h2 style="text-align:center; color:#102233;">Create Account</h2>
-        <form method="post" action="{{ url_for('auth.register') }}">
-            <input type="text" name="name" placeholder="Full Name" required style="width:100%; margin:10px 0;">
-            <input type="email" name="email" placeholder="Email" required style="width:100%; margin:10px 0;">
-            <input type="password" name="password" placeholder="Password" required style="width:100%; margin:10px 0;">
-            <select name="role" required style="width:100%; margin:10px 0;">
-                <option value="" disabled selected>Select Role</option>
-                <option value="student">Student</option>
-                <option value="club">Club / Organization</option>
-            </select>
-            <button class="btn" style="width:100%; margin-top:8px;">Register</button>
-        </form>
-        <div style="text-align:center;margin-top:12px; color:#102233;">
-            <p>Already have an account? <a href="{{ url_for('auth.login') }}">Login here</a></p>
+    <div class="auth-page">
+        <div class="auth-card" style="max-width:520px;">
+            <h2 class="auth-title">Create Account</h2>
+            <form method="post" action="{{ url_for('auth.register') }}">
+                <input type="text" name="name" placeholder="Full Name" required class="form-control" style="margin:10px 0;">
+                <input type="email" name="email" placeholder="College Email (e.g. name@anurag.edu.in)" required class="form-control" style="margin:10px 0;">
+                <input type="password" name="password" placeholder="Password" required class="form-control" style="margin:10px 0;">
+                <select name="role" required class="form-control" style="margin:10px 0;">
+                    <option value="" disabled selected>Select Role</option>
+                    <option value="student">Student</option>
+                    <option value="faculty">Faculty</option>
+                    <option value="club">Club / Organization</option>
+                </select>
+                <input type="text" name="otp" placeholder="Enter OTP sent to your email" required class="form-control" style="margin:10px 0;">
+                <button class="btn-primary" style="margin-top:8px;">Register</button>
+            </form>
+            <div style="margin-top:10px;">
+                <form method="post" action="{{ url_for('auth.request_registration_otp') }}">
+                    <input type="email" name="email" placeholder="Email for OTP" required class="form-control" style="margin:10px 0;">
+                    <button class="btn-primary" style="background: var(--accent-color); margin-top:4px;">Send OTP to Email</button>
+                </form>
+            </div>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div style="margin-top:12px;">
+                    {% for category, message in messages %}
+                        <div style="padding:10px; border-radius:6px; margin-bottom:8px; color:var(--text-color); background:#f5f7fb;">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            {% endwith %}
+            <div class="auth-footer">
+                <p>Already have an account? <a href="{{ url_for('auth.login') }}" style="color:var(--secondary-color); font-weight:700;">Login here</a></p>
+            </div>
         </div>
     </div>
 </body>

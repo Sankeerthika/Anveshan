@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ project.title }} | Anveshan</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/unstop_theme.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <a href="{{ url_for('student.dashboard') }}" class="logo-container">
+                    <div class="logo-icon">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <span class="logo-text">Anveshan</span>
+                </a>
+            </div>
+            
+            <div class="user-profile-sidebar">
+                <img src="{{ url_for('static', filename='uploads/profile_pics/' + (user.profile_photo if user.profile_photo else 'default.png')) }}" 
+                     alt="Profile" class="user-avatar-small"
+                     onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><rect width=%27100%27 height=%27100%27 fill=%27%23e0e0e0%27/><text x=%2750%27 y=%2755%27 font-size=%2712%27 text-anchor=%27middle%27 fill=%27%23666%27>Avatar</text></svg>'">
+                <h4 style="margin: 0; font-size: 1.1rem;">{{ user.name or 'Student' }}</h4>
+                <p style="color: #666; font-size: 0.85rem;">{{ user.role|title }}</p>
+                <a href="{{ url_for('student.profile') }}" style="font-size: 0.8rem; color: var(--secondary-color);">Edit Profile</a>
+            </div>
+
+            <ul class="sidebar-menu">
+                <li>
+                    <a href="{{ url_for('student.dashboard') }}">
+                        <i class="fas fa-th-large"></i> Dashboard
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('collaboration.community') }}" class="active">
+                        <i class="fas fa-users-cog"></i> Community
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('student.profile') }}">
+                        <i class="fas fa-user"></i> My Profile
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('find_team.find_team') }}">
+                        <i class="fas fa-users"></i> Find Team
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('find_team.my_join_requests') }}">
+                        <i class="fas fa-envelope"></i> My Requests
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('auth.logout') }}">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header" style="margin-bottom: 30px; display: flex; align-items: center;">
+                <button class="toggle-sidebar-btn" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div style="margin-left: 15px;">
+                    <a href="{{ url_for('collaboration.community') }}" style="text-decoration: none; color: #666; font-size: 0.9rem;">
+                        <i class="fas fa-arrow-left"></i> Back to Community
+                    </a>
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <h2 style="margin: 5px 0 0 0;">Project Details</h2>
+                        {% if session.get('user_id') == project.user_id %}
+                            <a href="{{ url_for('collaboration.edit_project', project_id=project.id) }}" class="btn-secondary" style="margin-top: 5px; padding: 5px 15px; font-size: 0.8rem; text-decoration: none; background: #eee; color: #333; border-radius: 4px;">
+                                <i class="fas fa-edit"></i> Edit
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="max-width: 900px; margin: 0 auto;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+                    <div>
+                        <span class="badge" style="background: #e3f2fd; color: #1976d2; padding: 5px 10px; border-radius: 5px;">{{ project.domain }}</span>
+                        <h1 style="margin: 10px 0;">{{ project.title }}</h1>
+                        <p style="color: #666; font-size: 0.9rem;">Posted on {{ project.created_at.strftime('%B %d, %Y') }}</p>
+                    </div>
+                    <div style="text-align: right;">
+                         <a href="{{ url_for('collaboration.view_profile', profile_id=project.user_id) }}" style="text-decoration: none; color: inherit; display: flex; align-items: center; justify-content: flex-end;">
+                            <div style="margin-right: 10px;">
+                                <div style="font-weight: bold;">{{ project.creator_name }}</div>
+                                <div style="font-size: 0.8rem; color: #666;">{{ project.creator_role|title }}</div>
+                            </div>
+                            <img src="{{ url_for('static', filename='uploads/profile_pics/' + (project.creator_photo if project.creator_photo else 'default.png')) }}" 
+                                 class="user-avatar-small"
+                                 onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><rect width=%27100%27 height=%27100%27 fill=%27%23e0e0e0%27/><text x=%2750%27 y=%2755%27 font-size=%2712%27 text-anchor=%27middle%27 fill=%27%23666%27>Avatar</text></svg>'">
+                        </a>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 30px;">
+                    <h3>Description</h3>
+                    <p style="line-height: 1.6; color: #333;">{{ project.description }}</p>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;">
+                    <div>
+                        <h3>Tech Stack</h3>
+                        <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                            {% for tech in project.tech_stack.split(',') %}
+                                <span style="background: #f0f2f5; padding: 5px 15px; border-radius: 20px; color: #555;">{{ tech.strip() }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div>
+                        <h3>Looking For</h3>
+                        <p style="color: var(--primary-color); font-weight: 500; font-size: 1.1rem;">
+                            {{ project.looking_for }}
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Requests Management (Owner Only) -->
+                {% if session.get('user_id') == project.user_id and requests %}
+                    <div style="margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px;">
+                        <h3>Collaboration Requests</h3>
+                        <div style="display: flex; flex-direction: column; gap: 15px;">
+                            {% for req in requests %}
+                                <div style="display: flex; justify-content: space-between; align-items: center; background: #fff; border: 1px solid #eee; padding: 15px; border-radius: 8px;">
+                                    <div style="display: flex; align-items: center; gap: 15px;">
+                                        <img src="{{ url_for('static', filename='uploads/profile_pics/' + (req.user_photo if req.user_photo else 'default.png')) }}" 
+                                             class="user-avatar-small" style="width: 50px; height: 50px;"
+                                             onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><rect width=%27100%27 height=%27100%27 fill=%27%23e0e0e0%27/><text x=%2750%27 y=%2755%27 font-size=%2712%27 text-anchor=%27middle%27 fill=%27%23666%27>Avatar</text></svg>'">
+                                        <div>
+                                            <h4 style="margin: 0;">
+                                                <a href="{{ url_for('collaboration.view_profile', profile_id=req.user_id) }}" style="text-decoration: none; color: inherit;">{{ req.user_name }}</a>
+                                            </h4>
+                                            <p style="margin: 2px 0; font-size: 0.85rem; color: #666;">{{ req.user_role|title }}</p>
+                                            <p style="margin: 5px 0 0 0; font-size: 0.9rem;">"{{ req.message }}"</p>
+                                        </div>
+                                    </div>
+                                    <div style="display: flex; gap: 10px;">
+                                        <form action="{{ url_for('collaboration.manage_request', request_id=req.id, action='accepted') }}" method="POST" style="display: inline;">
+                                            <button type="submit" class="btn-primary" style="padding: 5px 15px; font-size: 0.9rem;">Accept</button>
+                                        </form>
+                                        <form action="{{ url_for('collaboration.manage_request', request_id=req.id, action='rejected') }}" method="POST" style="display: inline;">
+                                            <button type="submit" class="btn-secondary" style="padding: 5px 15px; font-size: 0.9rem; background: #fbe9e7; color: #d32f2f;">Reject</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+
+                <!-- Join Project Section -->
+                {% if session.get('user_id') != project.user_id %}
+                    <div style="margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px;">
+                        {% if project.request_status == 'pending' %}
+                            <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; text-align: center;">
+                                <i class="fas fa-clock fa-2x" style="color: #1976d2; margin-bottom: 10px;"></i>
+                                <h3 style="color: #1976d2; margin: 0;">Request Pending</h3>
+                                <p>You have requested to join this project. Waiting for owner's response.</p>
+                            </div>
+                        {% elif project.request_status == 'accepted' %}
+                            <div style="background: #e8f5e9; padding: 20px; border-radius: 8px; text-align: center;">
+                                <i class="fas fa-check-circle fa-2x" style="color: #2e7d32; margin-bottom: 10px;"></i>
+                                <h3 style="color: #2e7d32; margin: 0;">You are a Member!</h3>
+                                <p>Your request to join this project has been accepted.</p>
+                            </div>
+                        {% elif project.request_status == 'rejected' %}
+                            <div style="background: #ffebee; padding: 20px; border-radius: 8px; text-align: center;">
+                                <i class="fas fa-times-circle fa-2x" style="color: #c62828; margin-bottom: 10px;"></i>
+                                <h3 style="color: #c62828; margin: 0;">Request Rejected</h3>
+                                <p>Sorry, your request to join this project was not accepted.</p>
+                            </div>
+                        {% else %}
+                            <h3>Interested in Joining?</h3>
+                            <form action="{{ url_for('collaboration.join_project', project_id=project.id) }}" method="POST" style="background: #f9f9f9; padding: 20px; border-radius: 8px;">
+                                <div class="form-group" style="margin-bottom: 15px;">
+                                    <label for="message" style="display: block; margin-bottom: 5px; font-weight: 500;">Message to Project Lead</label>
+                                    <textarea name="message" id="message" rows="3" class="form-control" placeholder="Hi, I'm interested in this project because..." required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;"></textarea>
+                                </div>
+                                <button type="submit" class="btn-primary" style="width: 100%;">
+                                    <i class="fas fa-paper-plane"></i> Send Join Request
+                                </button>
+                            </form>
+                            <div style="text-align: center; margin-top: 10px;">
+                                <span style="color: #666;">Or contact directly:</span>
+                                <a href="mailto:{{ project.creator_email }}?subject=Interested in your project: {{ project.title }}" style="color: var(--primary-color);">{{ project.creator_email }}</a>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+
+                <!-- Comments Section -->
+                <div style="margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px;">
+                    <h3>Discussion <span style="font-size: 0.9rem; color: #666;">({{ comments|length }})</span></h3>
+                    
+                    <!-- Comment Form -->
+                    <form action="{{ url_for('collaboration.add_comment', project_id=project.id) }}" method="POST" style="margin-bottom: 30px; display: flex; gap: 15px;">
+                        <img src="{{ url_for('static', filename='uploads/profile_pics/' + (user.profile_photo if user.profile_photo else 'default.png')) }}" 
+                             class="user-avatar-small" style="width: 40px; height: 40px;"
+                             onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><rect width=%27100%27 height=%27100%27 fill=%27%23e0e0e0%27/><text x=%2750%27 y=%2755%27 font-size=%2712%27 text-anchor=%27middle%27 fill=%27%23666%27>Avatar</text></svg>'">
+                        <div style="flex: 1;">
+                            <textarea name="content" rows="2" placeholder="Ask a question or share your thoughts..." required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; resize: vertical;"></textarea>
+                            <button type="submit" class="btn-secondary" style="margin-top: 10px; padding: 5px 15px; font-size: 0.9rem;">Post Comment</button>
+                        </div>
+                    </form>
+
+                    <!-- Comments List -->
+                    <div class="comments-list">
+                        {% for comment in comments %}
+                            <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+                                <a href="{{ url_for('collaboration.view_profile', profile_id=comment.user_id) }}">
+                                    <img src="{{ url_for('static', filename='uploads/profile_pics/' + (comment.user_photo if comment.user_photo else 'default.png')) }}" 
+                                         class="user-avatar-small" style="width: 40px; height: 40px;"
+                                         onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><rect width=%27100%27 height=%27100%27 fill=%27%23e0e0e0%27/><text x=%2750%27 y=%2755%27 font-size=%2712%27 text-anchor=%27middle%27 fill=%27%23666%27>Avatar</text></svg>'">
+                                </a>
+                                <div>
+                                    <div style="margin-bottom: 5px;">
+                                        <a href="{{ url_for('collaboration.view_profile', profile_id=comment.user_id) }}" style="text-decoration: none; color: #333; font-weight: bold; font-size: 0.95rem;">{{ comment.user_name }}</a>
+                                        <span style="color: #888; font-size: 0.8rem; margin-left: 5px;">{{ comment.created_at.strftime('%b %d, %I:%M %p') }}</span>
+                                    </div>
+                                    <p style="margin: 0; color: #444; font-size: 0.95rem; line-height: 1.5;">{{ comment.content }}</p>
+                                </div>
+                            </div>
+                        {% else %}
+                            <p style="color: #888; text-align: center;">No comments yet. Be the first to start the discussion!</p>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                {% if session.get('user_id') == project.user_id %}
+                    {% if recommended_users %}
+                        <div style="margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px;">
+                            <h3>Recommended Collaborators</h3>
+                            <p style="color: #666; margin-bottom: 20px;">People with skills matching your project.</p>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px;">
+                                {% for profile in recommended_users %}
+                                    <div style="border: 1px solid #eee; padding: 15px; border-radius: 8px; text-align: center;">
+                                        <img src="{{ url_for('static', filename='uploads/profile_pics/' + (profile.profile_photo if profile.profile_photo else 'default.png')) }}" 
+                                             class="user-avatar-small" style="width: 60px; height: 60px; margin-bottom: 10px;"
+                                             onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><rect width=%27100%27 height=%27100%27 fill=%27%23e0e0e0%27/><text x=%2750%27 y=%2755%27 font-size=%2712%27 text-anchor=%27middle%27 fill=%27%23666%27>Avatar</text></svg>'">
+                                        <h4 style="margin: 5px 0; font-size: 1rem;">{{ profile.name }}</h4>
+                                        <p style="color: #666; font-size: 0.8rem; margin-bottom: 10px;">{{ profile.role|title }}</p>
+                                        <div style="margin-bottom: 10px; display: flex; flex-wrap: wrap; justify-content: center; gap: 5px;">
+                                             {% if profile.skills %}
+                                                 {% for skill in profile.skills.split(',')[:3] %}
+                                                    <span style="font-size: 0.7rem; background: #eef; color: #55a; padding: 2px 8px; border-radius: 10px;">{{ skill.strip() }}</span>
+                                                 {% endfor %}
+                                             {% endif %}
+                                        </div>
+                                        <a href="{{ url_for('collaboration.view_profile', profile_id=profile.id) }}" class="btn-secondary" style="font-size: 0.8rem; padding: 5px 15px; width: 100%; display: inline-block;">View Profile</a>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const container = document.querySelector('.dashboard-container');
+            sidebar.classList.toggle('collapsed');
+            container.classList.toggle('sidebar-collapsed');
+            const isCollapsed = sidebar.classList.contains('collapsed');
+            localStorage.setItem('sidebarCollapsed', isCollapsed);
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            if (isCollapsed) {
+                document.getElementById('sidebar').classList.add('collapsed');
+                document.querySelector('.dashboard-container').classList.add('sidebar-collapsed');
+            }
+        });
+    </script>
+</body>
+</html>

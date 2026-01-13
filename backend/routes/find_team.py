@@ -14,6 +14,10 @@ def find_team():
     user_email = session.get('user_email')
     cursor = db.cursor(dictionary=True)
 
+    # Fetch user for sidebar
+    cursor.execute("SELECT * FROM users WHERE id = %s", (session['user_id'],))
+    user = cursor.fetchone()
+
     # -------------------------
     # CREATE / UPDATE TEAM REQUEST
     # -------------------------
@@ -64,7 +68,7 @@ def find_team():
     requests = cursor.fetchall()
 
     cursor.close()
-    return render_template('find_team.html', events=events, requests=requests)
+    return render_template('find_team.html', events=events, requests=requests, user=user)
 
 
 # =====================================================
@@ -77,6 +81,10 @@ def join_team(request_id):
 
     user_email = session.get('user_email')
     cursor = db.cursor(dictionary=True)
+
+    # Fetch user for sidebar
+    cursor.execute("SELECT * FROM users WHERE id = %s", (session['user_id'],))
+    user = cursor.fetchone()
 
     cursor.execute("""
         SELECT tr.*, e.title AS event_title
@@ -118,7 +126,7 @@ def join_team(request_id):
         return redirect(url_for('find_team.find_team'))
 
     cursor.close()
-    return render_template('join_team.html', team_request=team_request)
+    return render_template('join_team.html', team_request=team_request, user=user)
 
 
 # =====================================================
@@ -130,6 +138,10 @@ def my_team_requests():
         return redirect(url_for('auth.login'))
 
     cursor = db.cursor(dictionary=True)
+
+    # Fetch user for sidebar
+    cursor.execute("SELECT * FROM users WHERE id = %s", (session['user_id'],))
+    user = cursor.fetchone()
 
     cursor.execute("""
         SELECT 
@@ -154,7 +166,8 @@ def my_team_requests():
 
     return render_template(
         'my_team_requests.html',
-        join_requests=join_requests
+        join_requests=join_requests,
+        user=user
     )
 
 # =====================================================
@@ -227,6 +240,10 @@ def my_join_requests():
 
     cursor = db.cursor(dictionary=True)
 
+    # Fetch user for sidebar
+    cursor.execute("SELECT * FROM users WHERE id = %s", (session['user_id'],))
+    user = cursor.fetchone()
+
     cursor.execute("""
         SELECT 
             jr.name,
@@ -248,5 +265,6 @@ def my_join_requests():
 
     return render_template(
         'my_join_requests.html',
-        join_requests=join_requests
+        join_requests=join_requests,
+        user=user
     )

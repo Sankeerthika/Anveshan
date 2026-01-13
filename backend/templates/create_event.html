@@ -2,175 +2,221 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Create Hackathon</title>
-
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/status_theme.css') }}">
-
-    <!--<style>
-        body {
-            background: #e0e5ec;
-            font-family: 'Poppins', sans-serif;
-        }
-
-        .container {
-            width: 450px;
-            margin: 50px auto;
-            padding: 30px;
-            border-radius: 20px;
-            background: #e0e5ec;
-            box-shadow: 5px 5px 15px #bebebe,
-                        -5px -5px 15px #ffffff;
-        }
-
-        h2 {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        input {
-            width: 100%;
-            padding: 10px;
-            margin: 8px 0;
-            border-radius: 10px;
-            border: none;
-            background: #e0e5ec;
-            box-shadow: inset 3px 3px 6px #bebebe,
-                        inset -3px -3px 6px #ffffff;
-        }
-
-        button {
-            width: 100%;
-            margin-top: 15px;
-            padding: 10px;
-            border-radius: 12px;
-            border: none;
-            cursor: pointer;
-            background: #e0e5ec;
-            box-shadow: 5px 5px 10px #bebebe,
-                        -5px -5px 10px #ffffff;
-        }
-
-        button:hover {
-            box-shadow: inset 5px 5px 10px #bebebe,
-                        inset -5px -5px 10px #ffffff;
-        }
-
-        .checkbox-group label {
-            display: block;
-            margin: 5px 0;
-        }
-
-        .discount-section {
-            margin-top: 10px;
-        }
-
-        .back {
-            text-align: center;
-            margin-top: 15px;
-        }
-    </style>-->
-
-    <script>
-        function toggleDiscount() {
-            const checkbox = document.getElementById("girls_discount_enabled");
-            const discountInput = document.getElementById("girls_team_discount");
-
-            discountInput.disabled = !checkbox.checked;
-            if (!checkbox.checked) {
-                discountInput.value = 0;
-            }
-        }
-    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Events | Anveshan</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/unstop_theme.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
-
 <body>
 
-<header style="padding:18px 0; position:relative;">
-    <div class="container" style="display:flex; justify-content:space-between; align-items:center;">
-        <h2 class="title">Create Hackathon</h2>
-        <a href="{{ url_for('club.club_dashboard') }}" class="btn btn--primary" style="position:fixed; top:18px; right:18px; z-index:60;">⬅ Back to Dashboard</a>
-    </div>
-</header>
-
-    <div class="container">
-    <div class="card" style="margin:16px auto; max-width:900px; border:1px solid #000;">
-        <form method="POST">
-            <div class="form-grid">
-                <div>
-                    <label>Hackathon Title</label>
-                    <input type="text" name="title" required>
-                </div>
-
-                <div>
-                    <label>Organising Club</label>
-                    <input type="text" name="club_name" required>
-                </div>
-
-                <div style="grid-column:1/-1;">
-                    <label>Organising Department</label>
-                    <input type="text" name="organising_department" required>
-                </div>
-
-                <div style="grid-column:1/-1;">
-                    <label>Domains</label>
-                    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:8px;">
-                        <label><input type="checkbox" name="domains[]" value="AI"> AI</label>
-                        <label><input type="checkbox" name="domains[]" value="Web"> Web Development</label>
-                        <label><input type="checkbox" name="domains[]" value="ML"> Machine Learning</label>
-                        <label><input type="checkbox" name="domains[]" value="Blockchain"> Blockchain</label>
-                        <label><input type="checkbox" name="domains[]" value="Cyber Security"> Cyber Security</label>
-                        <label><input type="checkbox" name="domains[]" value="IoT"> IoT</label>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <a href="{{ url_for('club.club_dashboard') }}" class="logo-container">
+                    <div class="logo-icon">
+                        <i class="fas fa-search"></i>
                     </div>
+                    <span class="logo-text">Anveshan</span>
+                </a>
+            </div>
+            
+            <div class="user-profile-sidebar">
+                <div style="width: 80px; height: 80px; background: #e0e0e0; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px auto; color: #666; font-size: 30px;">
+                    <i class="fas fa-users"></i>
                 </div>
-
-                <div>
-                    <label>Registration Deadline</label>
-                    <input type="date" name="deadline" required>
-                </div>
-
-                <div>
-                    <label>Registration Fee (INR)</label>
-                    <input type="number" name="registration_fee" min="0" value="0" required>
-                </div>
-
-                <div>
-                    <label>Minimum Team Size</label>
-                    <input type="number" name="min_team_size" min="1" value="1" required>
-                </div>
-
-                <div>
-                    <label>Maximum Team Size</label>
-                    <input type="number" name="max_team_size" min="1" value="5" required>
-                </div>
-
-                <div style="grid-column:1/-1; display:flex; gap:12px; align-items:center; margin-top:6px;">
-                    <label style="display:flex; align-items:center; gap:8px;">
-                        <input type="checkbox"
-                               name="girls_discount_enabled"
-                               id="girls_discount_enabled"
-                               onchange="toggleDiscount()">
-                        Enable Girls-only Team Discount
-                    </label>
-
-                    <div style="margin-left:auto; display:flex; gap:8px; align-items:center;">
-                        <label style="margin:0;">Girls Team Discount Amount (INR)</label>
-                        <input type="number"
-                               name="girls_team_discount"
-                               id="girls_team_discount"
-                               min="0"
-                               value="0"
-                               disabled
-                               style="width:120px;">
-                    </div>
-                </div>
+                <h4 style="margin: 0; font-size: 1.1rem;">{{ user.name }}</h4>
+                <p style="color: #666; font-size: 0.85rem;">Organizer</p>
             </div>
 
-            <div style="margin-top:16px; text-align:right;">
-                <button class="btn btn--primary">Create Event</button>
-            </div>
-        </form>
-    </div>
-</div>
+            <ul class="sidebar-menu">
+                <li>
+                    <a href="{{ url_for('club.club_dashboard') }}">
+                        <i class="fas fa-th-large"></i> Dashboard
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('events.create_event') }}" class="active">
+                        <i class="fas fa-calendar-plus"></i> Manage Events
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('events.view_registrations') }}">
+                        <i class="fas fa-list-alt"></i> Registrations
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('club.club_questions') }}">
+                        <i class="fas fa-question-circle"></i> Inquiries
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('auth.logout') }}">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </li>
+            </ul>
+        </div>
 
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header" style="margin-bottom: 30px; display: flex; align-items: center;">
+                <button class="toggle-sidebar-btn" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div style="margin-left: 15px;">
+                    <h2 style="margin: 0;">Manage Events</h2>
+                    <p style="color: var(--text-muted); margin: 0;">View existing events and create new ones.</p>
+                </div>
+                <a href="{{ url_for('club.club_dashboard') }}" class="btn-primary" style="margin-left: auto; text-decoration: none; display: inline-block; width: auto;">Back to Dashboard</a>
+            </div>
+
+            <!-- LIST OF OPEN EVENTS -->
+            <h3 style="margin-bottom: 20px; color: var(--text-color);">Your Events</h3>
+            {% if events %}
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin-bottom: 40px;">
+                    {% for event in events %}
+                    <div class="card" style="margin-bottom: 0;">
+                        <span style="display: inline-block; padding: 5px 12px; border-radius: 15px; background: #e6f0ff; color: var(--primary-color); font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 15px;">{{ event.event_type }}</span>
+                        <h3 style="margin: 0 0 10px 0; font-size: 1.2rem;">{{ event.title }}</h3>
+                        <div style="font-size: 0.9rem; color: var(--text-muted);">
+                            <p style="margin: 5px 0;"><i class="fas fa-calendar" style="width: 20px;"></i> {{ event.event_date }}</p>
+                            <p style="margin: 5px 0;"><i class="fas fa-clock" style="width: 20px;"></i> Deadline: {{ event.deadline }}</p>
+                            <p style="margin: 5px 0;"><i class="fas fa-map-marker-alt" style="width: 20px;"></i> {{ event.mode }} {% if event.venue %}({{ event.venue }}){% endif %}</p>
+                        </div>
+                        <div style="display: flex; gap: 10px; margin-top: 15px;">
+                            <a href="{{ url_for('events.view_registrations', event_id=event.id) }}" class="btn-primary" style="text-decoration: none;">
+                                <i class="fas fa-list-ul"></i> View Registrations
+                            </a>
+                            <a href="{{ url_for('events.download_registrations', event_id=event.id) }}" class="btn-primary" style="text-decoration: none; background: white; color: var(--primary-color); border: 1px solid var(--primary-color);">
+                                <i class="fas fa-file-csv"></i> Export CSV
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p style="text-align: center; color: var(--text-muted); margin-bottom: 30px;">No events created yet.</p>
+            {% endif %}
+
+            <!-- CREATE ACTIONS -->
+            <div style="display: flex; gap: 20px; justify-content: center; margin: 40px 0;">
+                <a href="{{ url_for('events.create_hackathon') }}" class="btn-primary" style="text-decoration: none; background: #333; display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-laptop-code"></i> Create New Hackathon
+                </a>
+                <button class="btn-primary" onclick="document.getElementById('general-event-form').scrollIntoView({behavior: 'smooth'});" style="display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-calendar-plus"></i> Create Other Event
+                </button>
+            </div>
+
+            <!-- CREATE NEW EVENT FORM -->
+            <div class="card" id="general-event-form" style="max-width: 800px; margin: 0 auto;">
+                <h3 class="card-title">Create General Event</h3>
+                <p style="color: var(--text-muted); margin-bottom: 20px;">Workshop, Seminar, etc.</p>
+                
+                <form method="POST">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div class="form-group" style="grid-column: span 2;">
+                            <label for="title">Event Title</label>
+                            <input type="text" name="title" id="title" class="form-control" required placeholder="e.g. AI Workshop 2024">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="event_type">Event Type</label>
+                            <select name="event_type" id="event_type" class="form-control" required>
+                                <option value="workshop">Workshop</option>
+                                <option value="competition">Competition</option>
+                                <option value="ideathon">Ideathon</option>
+                                <option value="seminar">Seminar</option>
+                                <option value="event">Other Event</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="organizer">Organizer Name</label>
+                            <input type="text" name="organizer" id="organizer" class="form-control" placeholder="Club Name or Department">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="event_date">Date & Time</label>
+                            <input type="datetime-local" name="event_date" id="event_date" class="form-control" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="deadline">Registration Deadline</label>
+                            <input type="datetime-local" name="deadline" id="deadline" class="form-control" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="mode">Mode</label>
+                            <select name="mode" id="mode" class="form-control" required>
+                                <option value="offline">Offline</option>
+                                <option value="online">Online</option>
+                                <option value="hybrid">Hybrid</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="venue">Venue / Meeting Link</label>
+                            <input type="text" name="venue" id="venue" class="form-control" placeholder="e.g. Auditorium A or Zoom Link">
+                        </div>
+                        
+                        <div class="form-group" style="grid-column: span 2;">
+                            <label for="description">Description</label>
+                            <textarea name="description" id="description" rows="4" class="form-control" placeholder="Event details, agenda, etc."></textarea>
+                        </div>
+
+                        <div class="form-group" style="grid-column: span 2;">
+                            <label for="organising_department">Organising Department (Optional)</label>
+                            <input type="text" name="organising_department" id="organising_department" class="form-control" placeholder="e.g. CSE">
+                        </div>
+
+                        <input type="hidden" name="club_name" value="">
+                    </div>
+
+                    <button type="submit" class="btn-primary" style="margin-top: 20px; width: 100%;">
+                        <i class="fas fa-plus-circle"></i> Create Event
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <script>
+            {% for category, message in messages %}
+                alert("{{ message }}");
+            {% endfor %}
+        </script>
+      {% endif %}
+    {% endwith %}
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const container = document.querySelector('.dashboard-container');
+            
+            sidebar.classList.toggle('collapsed');
+            container.classList.toggle('sidebar-collapsed');
+            
+            // Save state to local storage
+            const isCollapsed = sidebar.classList.contains('collapsed');
+            localStorage.setItem('sidebarCollapsed', isCollapsed);
+        }
+
+        // Restore sidebar state on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const sidebar = document.getElementById('sidebar');
+            const container = document.querySelector('.dashboard-container');
+            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            
+            if (isCollapsed) {
+                sidebar.classList.add('collapsed');
+                container.classList.add('sidebar-collapsed');
+            }
+        });
+    </script>
 </body>
 </html>

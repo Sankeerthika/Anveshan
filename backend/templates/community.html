@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Community & Collaboration | Anveshan</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/unstop_theme.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        .tab-btn {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-weight: 600;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        .tab-btn.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .profile-grid, .project-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .profile-card, .project-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            transition: transform 0.2s;
+        }
+        .profile-card:hover, .project-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .profile-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .profile-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 15px;
+        }
+        .skill-tag {
+            background: #f0f2f5;
+            color: #555;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            margin-right: 5px;
+            margin-bottom: 5px;
+            display: inline-block;
+        }
+        .project-meta {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+        .action-btn {
+            display: inline-block;
+            padding: 8px 16px;
+            background: var(--primary-color);
+            color: white;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+        }
+        .action-btn:hover {
+            background: #0056b3;
+        }
+        .fab {
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <a href="{{ url_for('student.dashboard') }}" class="logo-container">
+                    <div class="logo-icon">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <span class="logo-text">Anveshan</span>
+                </a>
+            </div>
+            
+            <div class="user-profile-sidebar">
+                <img src="{{ url_for('static', filename='uploads/profile_pics/' + (user.profile_photo if user.profile_photo else 'default.png')) }}" 
+                     alt="Profile" class="user-avatar-small"
+                     onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><rect width=%27100%27 height=%27100%27 fill=%27%23e0e0e0%27/><text x=%2750%27 y=%2755%27 font-size=%2712%27 text-anchor=%27middle%27 fill=%27%23666%27>Avatar</text></svg>'">
+                <h4 style="margin: 0; font-size: 1.1rem;">{{ user.name or 'Student' }}</h4>
+                <p style="color: #666; font-size: 0.85rem;">{{ user.role|title }}</p>
+                <a href="{{ url_for('student.profile') }}" style="font-size: 0.8rem; color: var(--secondary-color);">Edit Profile</a>
+            </div>
+
+            <ul class="sidebar-menu">
+                <li>
+                    <a href="{{ url_for('collaboration.faculty_dashboard') if user.role == 'faculty' else url_for('student.dashboard') }}">
+                        <i class="fas fa-th-large"></i> Dashboard
+                    </a>
+                </li>
+                {% if user.role == 'faculty' %}
+                <li>
+                    <a href="{{ url_for('collaboration.faculty_dashboard') }}" style="color: #e67e22;">
+                        <i class="fas fa-chalkboard-teacher"></i> Faculty Dashboard
+                    </a>
+                </li>
+                {% endif %}
+                <li>
+                    <a href="{{ url_for('collaboration.community') }}" class="active">
+                        <i class="fas fa-users-cog"></i> Community
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('collaboration.faculty_profile') if user.role == 'faculty' else url_for('student.profile') }}">
+                        <i class="fas fa-user"></i> My Profile
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('find_team.find_team') }}">
+                        <i class="fas fa-users"></i> Find Team
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('find_team.my_join_requests') }}">
+                        <i class="fas fa-envelope"></i> My Requests
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('auth.logout') }}">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header" style="margin-bottom: 30px; display: flex; align-items: center; justify-content: space-between;">
+                <div style="display: flex; align-items: center;">
+                    <button class="toggle-sidebar-btn" onclick="toggleSidebar()">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div style="margin-left: 15px;">
+                        <h2 style="margin: 0;">Community & Collaboration</h2>
+                        <p style="color: var(--text-muted); margin: 0;">Connect with peers and discover projects.</p>
+                    </div>
+                </div>
+                <a href="{{ url_for('collaboration.create_project') }}" class="action-btn">
+                    <i class="fas fa-plus"></i> Post Project
+                </a>
+            </div>
+
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}" style="margin-bottom: 20px; padding: 15px; border-radius: 5px; background: {{ '#d4edda' if category == 'success' else '#f8d7da' }}; color: {{ '#155724' if category == 'success' else '#721c24' }};">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <div class="tabs">
+                <button class="tab-btn active" onclick="openTab(event, 'projects')">Projects</button>
+                <button class="tab-btn" onclick="openTab(event, 'people')">People</button>
+            </div>
+
+            <!-- Projects Tab -->
+            <div id="projects" class="tab-content active">
+                <div class="project-grid">
+                    {% for project in projects %}
+                    <div class="project-card">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                            <span style="font-size: 0.8rem; color: #888; text-transform: uppercase; font-weight: bold;">{{ project.domain }}</span>
+                            <span style="font-size: 0.8rem; color: #888;">{{ project.created_at.strftime('%b %d') }}</span>
+                        </div>
+                        <h3 style="margin: 0 0 10px 0; font-size: 1.2rem; display: flex; justify-content: space-between; align-items: flex-start;">
+                            <a href="{{ url_for('collaboration.project_details', project_id=project.id) }}" style="text-decoration: none; color: inherit;">
+                                {{ project.title }}
+                            </a>
+                            {% if session.get('user_id') == project.user_id %}
+                                <a href="{{ url_for('collaboration.edit_project', project_id=project.id) }}" title="Edit Project" style="font-size: 0.9rem; color: #666; margin-left: 10px;">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                            {% endif %}
+                        </h3>
+                        <p style="color: #555; font-size: 0.95rem; margin-bottom: 15px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
+                            {{ project.description }}
+                        </p>
+                        
+                        <div style="margin-bottom: 15px;">
+                            <strong style="font-size: 0.9rem;">Looking for:</strong>
+                            <p style="color: var(--primary-color); font-size: 0.9rem; margin: 0;">{{ project.looking_for }}</p>
+                        </div>
+
+                        <div style="display: flex; align-items: center; margin-top: auto; padding-top: 15px; border-top: 1px solid #eee;">
+                            <img src="{{ url_for('static', filename='uploads/profile_pics/' + (project.creator_photo if project.creator_photo else 'default.png')) }}" 
+                                 class="user-avatar-small" style="width: 30px; height: 30px; margin-right: 10px;"
+                                 onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><rect width=%27100%27 height=%27100%27 fill=%27%23e0e0e0%27/><text x=%2750%27 y=%2755%27 font-size=%2712%27 text-anchor=%27middle%27 fill=%27%23666%27>Avatar</text></svg>'">
+                            <span style="font-size: 0.9rem; color: #666;">{{ project.creator_name }}</span>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #666;">
+                        <i class="fas fa-project-diagram fa-3x" style="margin-bottom: 15px; color: #ddd;"></i>
+                        <p>No projects posted yet. Be the first!</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- People Tab -->
+            <div id="people" class="tab-content">
+                {% if is_filtered %}
+                    <div style="margin-bottom: 20px; padding: 15px; background: #e8f5e9; color: #2e7d32; border-radius: 5px; display: flex; justify-content: space-between; align-items: center;">
+                        <span><i class="fas fa-filter"></i> Showing people recommended for your projects based on skills & interests.</span>
+                        <a href="{{ url_for('collaboration.community') }}?show_all=true" style="color: #2e7d32; text-decoration: underline; font-weight: bold;">Show Everyone</a>
+                    </div>
+                {% endif %}
+                <div class="profile-grid">
+                    {% for person in profiles %}
+                    <div class="profile-card">
+                        <div class="profile-header">
+                            <img src="{{ url_for('static', filename='uploads/profile_pics/' + (person.profile_photo if person.profile_photo else 'default.png')) }}" 
+                                 class="profile-avatar"
+                                 onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><rect width=%27100%27 height=%27100%27 fill=%27%23e0e0e0%27/><text x=%2750%27 y=%2755%27 font-size=%2712%27 text-anchor=%27middle%27 fill=%27%23666%27>Avatar</text></svg>'">
+                            <div>
+                                <h4 style="margin: 0; font-size: 1.1rem;">
+                                    <a href="{{ url_for('collaboration.view_profile', profile_id=person.id) }}" style="text-decoration: none; color: inherit;">
+                                        {{ person.name }}
+                                    </a>
+                                </h4>
+                                <span class="badge" style="background: {{ '#e3f2fd' if person.role == 'student' else '#fff3e0' }}; color: {{ '#1976d2' if person.role == 'student' else '#f57c00' }}; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem;">
+                                    {{ person.role|title }}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <p style="color: #666; font-size: 0.9rem; margin-bottom: 15px; height: 40px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+                            {{ person.bio or 'No bio available.' }}
+                        </p>
+
+                        <div style="margin-bottom: 15px; height: 60px; overflow: hidden;">
+                            {% if person.skills %}
+                                {% for skill in person.skills.split(',')[:4] %}
+                                    <span class="skill-tag">{{ skill.strip() }}</span>
+                                {% endfor %}
+                            {% else %}
+                                <span style="color: #999; font-size: 0.9rem;">No skills listed</span>
+                            {% endif %}
+                        </div>
+
+                        <div style="display: flex; gap: 10px;">
+                            {% if person.github_url %}
+                            <a href="{{ person.github_url }}" target="_blank" style="color: #333;"><i class="fab fa-github fa-lg"></i></a>
+                            {% endif %}
+                            {% if person.linkedin_url %}
+                            <a href="{{ person.linkedin_url }}" target="_blank" style="color: #0077b5;"><i class="fab fa-linkedin fa-lg"></i></a>
+                            {% endif %}
+                            {% if person.portfolio_url %}
+                            <a href="{{ person.portfolio_url }}" target="_blank" style="color: #ea4c89;"><i class="fas fa-globe fa-lg"></i></a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const container = document.querySelector('.dashboard-container');
+            sidebar.classList.toggle('collapsed');
+            container.classList.toggle('sidebar-collapsed');
+            const isCollapsed = sidebar.classList.contains('collapsed');
+            localStorage.setItem('sidebarCollapsed', isCollapsed);
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            if (isCollapsed) {
+                document.getElementById('sidebar').classList.add('collapsed');
+                document.querySelector('.dashboard-container').classList.add('sidebar-collapsed');
+            }
+        });
+
+        function openTab(evt, tabName) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tab-content");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+                tabcontent[i].classList.remove("active");
+            }
+            tablinks = document.getElementsByClassName("tab-btn");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            document.getElementById(tabName).style.display = "block";
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.className += " active";
+        }
+    </script>
+</body>
+</html>

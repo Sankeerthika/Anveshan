@@ -2,174 +2,222 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Hackathon Registration</title>
-
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/status_theme.css') }}">
-
-    <!--<style>
-        body {
-            font-family: 'Poppins', sans-serif;
-            background: #e0e5ec;
-            margin: 0;
-        }
-
-        .container {
-            max-width: 900px;
-            margin: 40px auto;
-            padding: 30px;
-            border-radius: 25px;
-            background: #e0e5ec;
-            box-shadow: 10px 10px 30px #bebebe,
-                        -10px -10px 30px #ffffff;
-        }
-
-        h2 {
-            text-align: center;
-            margin-bottom: 25px;
-        }
-
-        h3 {
-            margin-top: 30px;
-            color: #444;
-        }
-
-        label {
-            font-weight: 500;
-        }
-
-        input, select, textarea {
-            width: 100%;
-            padding: 10px;
-            margin: 8px 0 15px 0;
-            border-radius: 12px;
-            border: none;
-            background: #e0e5ec;
-            box-shadow: inset 5px 5px 10px #bebebe,
-                        inset -5px -5px 10px #ffffff;
-            outline: none;
-        }
-
-        textarea {
-            resize: none;
-            height: 80px;
-        }
-
-        .row {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-        }
-
-        .btn {
-            width: 100%;
-            padding: 12px;
-            border-radius: 15px;
-            background: #e0e5ec;
-            box-shadow: 5px 5px 10px #bebebe,
-                        -5px -5px 10px #ffffff;
-            border: none;
-            cursor: pointer;
-            font-size: 16px;
-            margin-top: 20px;
-        }
-
-        .btn:hover {
-            box-shadow: inset 5px 5px 10px #bebebe,
-                        inset -5px -5px 10px #ffffff;
-        }
-
-        .member-box {
-            margin-top: 15px;
-            padding: 15px;
-            border-radius: 15px;
-            background: #e0e5ec;
-            box-shadow: inset 3px 3px 8px #bebebe,
-                        inset -3px -3px 8px #ffffff;
-        }
-    </style>-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register | {{ event.title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/unstop_theme.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
-
 <body>
-
-<div class="container">
-    <h2>Hackathon Registration</h2>
-
-    <form method="POST" action="{{ url_for('events.submit_registration') }}" enctype="multipart/form-data">
-        <input type="hidden" name="event_id" value="{{ event_id }}">
-
-        <h3>Team Details</h3>
-        <label>Team Name</label>
-        <input type="text" name="team_name" required>
-
-        <label>Project Title</label>
-        <input type="text" name="project_title" required>
-
-        <label>Domain</label>
-        <select name="domain" required>
-            <option value="">Select</option>
-            <option>AI</option>
-            <option>Web Development</option>
-            <option>Blockchain</option>
-            <option>IoT</option>
-            <option>Cyber Security</option>
-        </select>
-
-        <h3>Team Lead Details</h3>
-        <div class="row">
-            <div>
-                <label>Name</label>
-                <input type="text" name="lead_name" required>
+    <div class="dashboard-container">
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <a href="{{ url_for('student.dashboard') }}" class="logo-container">
+                    <div class="logo-icon">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <span class="logo-text">Anveshan</span>
+                </a>
             </div>
-            <div>
-                <label>Email</label>
-                <input type="email" name="lead_email" required>
+            <div class="user-profile-sidebar">
+                <img src="{{ url_for('static', filename='uploads/profile_pics/' + (user.profile_photo if user.profile_photo else 'default.png')) }}" 
+                     alt="Profile" class="user-avatar-small"
+                     onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><rect width=%27100%27 height=%27100%27 fill=%27%23e0e0e0%27/><text x=%2750%27 y=%2755%27 font-size=%2712%27 text-anchor=%27middle%27 fill=%27%23666%27>Avatar</text></svg>'">
+                <h4 style="margin: 0; font-size: 1.1rem;">{{ user.name or 'Student' }}</h4>
+                <p style="color: #666; font-size: 0.85rem;">{{ user.role|title }}</p>
+                <a href="{{ url_for('student.profile') }}" style="font-size: 0.8rem; color: var(--secondary-color);">Edit Profile</a>
             </div>
-            <div>
-                <label>Phone</label>
-                <input type="text" name="lead_phone" required>
+            <ul class="sidebar-menu">
+                <li><a href="{{ url_for('student.dashboard') }}"><i class="fas fa-th-large"></i> Dashboard</a></li>
+                <li><a href="{{ url_for('collaboration.community') }}"><i class="fas fa-users-cog"></i> Community</a></li>
+                <li><a href="{{ url_for('student.profile') }}"><i class="fas fa-user"></i> My Profile</a></li>
+                <li><a href="{{ url_for('find_team.find_team') }}"><i class="fas fa-users"></i> Find Team</a></li>
+                <li><a href="{{ url_for('find_team.my_join_requests') }}"><i class="fas fa-envelope"></i> My Requests</a></li>
+                <li><a href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+        </div>
+        <div class="main-content">
+            <div class="header" style="margin-bottom: 30px; display: flex; align-items: center;">
+                <button class="toggle-sidebar-btn" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div style="margin-left: 15px;">
+                    <h2 style="margin: 0;">Register for {{ event.title }}</h2>
+                    <p style="color: var(--text-muted); margin: 0;">Fill your details to participate.</p>
+                </div>
+                <a href="{{ url_for('student.dashboard') }}" class="btn-primary" style="margin-left: auto; text-decoration: none; display: inline-block; width: auto;">Back to Dashboard</a>
             </div>
-            <div>
-                <label>Year</label>
-                <select name="lead_year" required>
-                    <option>1st</option>
-                    <option>2nd</option>
-                    <option>3rd</option>
-                    <option>4th</option>
-                </select>
+
+            <div class="card" style="margin-bottom: 20px;">
+                <h3 class="card-title" style="margin-bottom: 10px;">Event Details</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
+                    <div class="event-meta"><i class="fas fa-info-circle"></i> {{ event.event_type|title }}</div>
+                    <div class="event-meta"><i class="far fa-calendar-alt"></i> {{ event.event_date }}</div>
+                    <div class="event-meta"><i class="far fa-clock"></i> Deadline: {{ event.deadline }}</div>
+                    <div class="event-meta"><i class="fas fa-map-marker-alt"></i> {{ event.mode|title }} {% if event.venue %}({{ event.venue }}){% endif %}</div>
+                    <div class="event-meta"><i class="fas fa-user-tie"></i> {{ event.organizer or event.club_name }}</div>
+                </div>
+                {% if event.description %}
+                    <p style="margin-top:15px; color: var(--text-muted);">{{ event.description }}</p>
+                {% endif %}
+            </div>
+
+            <div class="card" style="max-width: 900px; margin: 0 auto;">
+                <h3 class="card-title">Registration Form</h3>
+                <form method="POST" action="{{ url_for('events.submit_registration') }}" enctype="multipart/form-data">
+                    <input type="hidden" name="event_id" value="{{ event_id }}">
+
+                    {% if event.event_type in ['hackathon', 'competition', 'ideathon'] %}
+                    <h4 style="margin-top: 10px;">Team Details</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div class="form-group">
+                            <label>Team Name</label>
+                            <input type="text" name="team_name" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Project Title / Idea</label>
+                            <input type="text" name="project_title" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Domain</label>
+                        <select name="domain" class="form-control">
+                            <option value="">Select Domain (Optional)</option>
+                            <option>AI / ML</option>
+                            <option>Web Development</option>
+                            <option>App Development</option>
+                            <option>Blockchain</option>
+                            <option>IoT</option>
+                            <option>Cyber Security</option>
+                            <option>Other</option>
+                        </select>
+                    </div>
+                    {% endif %}
+
+                    <h4 style="margin-top: 20px;">Participant / Team Lead Details</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div class="form-group">
+                            <label>Full Name</label>
+                            <input type="text" name="lead_name" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" name="lead_email" class="form-control" required placeholder="College Email (e.g. name@anurag.edu.in)">
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div class="form-group">
+                            <label>Phone Number</label>
+                            <input type="text" name="lead_phone" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Year</label>
+                            <select name="lead_year" class="form-control" required>
+                                <option value="">Select Year</option>
+                                <option>1st</option>
+                                <option>2nd</option>
+                                <option>3rd</option>
+                                <option>4th</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div class="form-group">
+                            <label>Branch</label>
+                            <select name="lead_branch" class="form-control" required>
+                                <option value="">Select Branch</option>
+                                <option>CSE</option>
+                                <option>ECE</option>
+                                <option>EEE</option>
+                                <option>MECH</option>
+                                <option>CIVIL</option>
+                                <option>IT</option>
+                                <option>AI&DS</option>
+                                <option>Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Section</label>
+                            <input type="text" name="lead_section" class="form-control" required placeholder="e.g. A, B, C, D, E...">
+                        </div>
+                    </div>
+
+                    {% if event.event_type in ['hackathon', 'competition', 'ideathon'] %}
+                    <h4 style="margin-top: 20px;">Team Members (Optional)</h4>
+                    <p style="font-size:14px; color: var(--text-muted);">Add details for up to 4 team members.</p>
+                    {% for i in range(1, 5) %}
+                    <div class="card" style="margin-bottom: 15px;">
+                        <h4 style="margin: 0 0 10px 0;">Member {{ i }}</h4>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                            <div class="form-group">
+                                <label>Name</label>
+                                <input type="text" name="member_name[]" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label>Email</label>
+                                <input type="email" name="member_email[]" class="form-control">
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+                            <div class="form-group">
+                                <label>Year</label>
+                                <select name="member_year[]" class="form-control">
+                                    <option value="">Select Year</option>
+                                    <option>1st</option>
+                                    <option>2nd</option>
+                                    <option>3rd</option>
+                                    <option>4th</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Branch</label>
+                                <select name="member_branch[]" class="form-control">
+                                    <option value="">Select Branch</option>
+                                    <option>CSE</option>
+                                    <option>ECE</option>
+                                    <option>EEE</option>
+                                    <option>MECH</option>
+                                    <option>CIVIL</option>
+                                    <option>IT</option>
+                                    <option>AI&DS</option>
+                                    <option>Other</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Section</label>
+                                <input type="text" name="member_section[]" class="form-control" placeholder="e.g. A, B, C, D, E...">
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+
+                    <h4 style="margin-top: 20px;">Payment & Confirmation</h4>
+                    <div class="form-group">
+                        <label>Upload Payment Screenshot (if applicable)</label>
+                        <input type="file" name="payment_screenshot" class="form-control">
+                    </div>
+                    <button type="submit" class="btn-primary" style="margin-top: 20px;">Confirm Registration</button>
+                </form>
             </div>
         </div>
+    </div>
 
-        <h3>Team Members</h3>
-
-        {% for i in range(1,5) %}
-        <div class="member-box">
-            <label>Member {{ i }} Name</label>
-            <input type="text" name="member_name_{{ i }}">
-
-            <label>Email</label>
-            <input type="email" name="member_email_{{ i }}">
-
-            <label>Year</label>
-            <select name="member_year_{{ i }}">
-                <option value="">Select</option>
-                <option>1st</option>
-                <option>2nd</option>
-                <option>3rd</option>
-                <option>4th</option>
-            </select>
-        </div>
-        {% endfor %}
-
-        <h3>Payment</h3>
-        <label>Upload Payment Screenshot</label>
-        <input type="file" name="payment_proof" required>
-
-        <label>WhatsApp Group Link</label>
-        <input type="url" name="whatsapp_link" placeholder="Provided by organizer">
-
-        <button type="submit" class="btn">Submit Registration</button>
-    </form>
-</div>
-
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const container = document.querySelector('.dashboard-container');
+            sidebar.classList.toggle('collapsed');
+            container.classList.toggle('sidebar-collapsed');
+            const isCollapsed = sidebar.classList.contains('collapsed');
+            localStorage.setItem('sidebarCollapsed', isCollapsed);
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            if (isCollapsed) {
+                document.getElementById('sidebar').classList.add('collapsed');
+                document.querySelector('.dashboard-container').classList.add('sidebar-collapsed');
+            }
+        });
+    </script>
 </body>
 </html>

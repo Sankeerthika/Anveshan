@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 40px auto; padding: 0 20px;">
+    <div style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+        <h2 style="margin-top: 0; color: #2c3e50; border-bottom: 2px solid #f0f0f0; padding-bottom: 20px; margin-bottom: 30px;">
+            <i class="fas fa-plus-circle" style="color: #3498db;"></i> Create New Collaboration
+        </h2>
+        
+        <form action="{{ url_for('collaboration.create_faculty_collaboration') }}" method="POST">
+            <!-- Basic Info -->
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label for="title" style="display: block; margin-bottom: 8px; font-weight: 500;">Title</label>
+                <input type="text" name="title" id="title" class="form-control" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label for="description" style="display: block; margin-bottom: 8px; font-weight: 500;">Description & Goals</label>
+                <textarea name="description" id="description" rows="5" class="form-control" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;"></textarea>
+            </div>
+
+            <!-- Type -->
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 500;">Collaboration Type</label>
+                <div style="display: flex; gap: 20px;">
+                    <label style="cursor: pointer;">
+                        <input type="radio" name="type" value="article" checked> Article Writing
+                    </label>
+                    <label style="cursor: pointer;">
+                        <input type="radio" name="type" value="project"> Research / Project
+                    </label>
+                </div>
+            </div>
+
+            <!-- Audience Control (Important) -->
+            <div class="form-group" style="margin-bottom: 25px; background: #f9f9f9; padding: 20px; border-radius: 8px;">
+                <label style="display: block; margin-bottom: 15px; font-weight: 600; color: #2c3e50;">Collaboration Audience</label>
+                
+                <div style="margin-bottom: 15px;">
+                    <label style="cursor: pointer; display: block; margin-bottom: 10px;">
+                        <input type="radio" name="audience" value="faculty_only" onclick="toggleFields('faculty')" checked> 
+                        <strong>Faculty Only</strong> <span style="color: #666; font-size: 0.9rem;">- Students cannot view or apply.</span>
+                    </label>
+                    
+                    <label style="cursor: pointer; display: block; margin-bottom: 10px;">
+                        <input type="radio" name="audience" value="students_only" onclick="toggleFields('students')"> 
+                        <strong>Students Only</strong> <span style="color: #666; font-size: 0.9rem;">- Mentorship or student-led research.</span>
+                    </label>
+                    
+                    <label style="cursor: pointer; display: block;">
+                        <input type="radio" name="audience" value="both" onclick="toggleFields('both')"> 
+                        <strong>Faculty + Students</strong> <span style="color: #666; font-size: 0.9rem;">- Joint research team.</span>
+                    </label>
+                </div>
+
+                <!-- Conditional Fields -->
+                <div id="student-limits" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd;">
+                    <div style="display: flex; gap: 20px;">
+                        <div style="flex: 1;">
+                            <label for="max_students" style="font-size: 0.9rem;">Max Students</label>
+                            <input type="number" name="max_students" id="max_students" min="0" value="0" class="form-control" style="width: 100%; padding: 8px;">
+                        </div>
+                        <div style="flex: 2;">
+                            <label for="required_skills" style="font-size: 0.9rem;">Required Skills (Comma separated)</label>
+                            <input type="text" name="required_skills" id="required_skills" placeholder="e.g. Python, AI, Writing" class="form-control" style="width: 100%; padding: 8px;">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="faculty-limits" style="display: none; margin-top: 15px;">
+                    <div style="flex: 1;">
+                        <label for="max_faculty" style="font-size: 0.9rem;">Max Faculty</label>
+                        <input type="number" name="max_faculty" id="max_faculty" min="0" value="0" class="form-control" style="width: 100%; padding: 8px; max-width: 150px;">
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 30px;">
+                <a href="{{ url_for('collaboration.faculty_dashboard') }}" style="color: #666; text-decoration: none;">Cancel</a>
+                <button type="submit" class="btn-primary" style="padding: 10px 30px;">Create Collaboration</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function toggleFields(audience) {
+        const studentSection = document.getElementById('student-limits');
+        const facultySection = document.getElementById('faculty-limits');
+        
+        if (audience === 'faculty_only') {
+            studentSection.style.display = 'none';
+            facultySection.style.display = 'block'; // Or hide if no limit for faculty? Assuming generic limit.
+            // Actually, for faculty only, maybe we want a max limit? Let's show it.
+            // But prompt implies limits are mostly for students.
+            // Let's keep it simple:
+            // Faculty Only -> Max Faculty (optional)
+            // Students Only -> Max Students + Skills
+            // Both -> Both
+        } else if (audience === 'students_only') {
+            studentSection.style.display = 'block';
+            facultySection.style.display = 'none';
+        } else if (audience === 'both') {
+            studentSection.style.display = 'block';
+            facultySection.style.display = 'block';
+        }
+    }
+    
+    // Init
+    toggleFields('faculty_only');
+</script>
+{% endblock %}

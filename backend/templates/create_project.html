@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Question | Anveshan</title>
+    <title>{% if is_edit %}Edit Project{% else %}Post a Project{% endif %} | Anveshan</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/unstop_theme.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
@@ -20,7 +20,7 @@
                     <span class="logo-text">Anveshan</span>
                 </a>
             </div>
-
+            
             <div class="user-profile-sidebar">
                 <img src="{{ url_for('static', filename='uploads/profile_pics/' + (user.profile_photo if user.profile_photo else 'default.png')) }}" 
                      alt="Profile" class="user-avatar-small"
@@ -37,7 +37,7 @@
                     </a>
                 </li>
                 <li>
-                    <a href="{{ url_for('collaboration.community') }}">
+                    <a href="{{ url_for('collaboration.community') }}" class="active">
                         <i class="fas fa-users-cog"></i> Community
                     </a>
                 </li>
@@ -71,20 +71,48 @@
                     <i class="fas fa-bars"></i>
                 </button>
                 <div style="margin-left: 15px;">
-                    <h2 style="margin: 0;">Edit Question</h2>
-                    <p style="color: var(--text-muted); margin: 0;">Event ID: {{ q.event_id }}</p>
+                    <h2 style="margin: 0;">{% if is_edit %}Edit Project{% else %}Post a Project{% endif %}</h2>
+                    <p style="color: var(--text-muted); margin: 0;">{% if is_edit %}Update your project details.{% else %}Share your idea and find collaborators.{% endif %}</p>
                 </div>
-                <a href="{{ url_for('student.dashboard') }}" class="btn-primary" style="margin-left: auto; text-decoration: none; display: inline-block; width: auto;">Back to Dashboard</a>
             </div>
 
             <div class="card" style="max-width: 800px; margin: 0 auto;">
-                <h3 class="card-title">Edit Your Question</h3>
                 <form method="POST">
                     <div class="form-group">
-                        <label for="question">Question</label>
-                        <textarea name="question" id="question" rows="6" class="form-control">{{ q.question }}</textarea>
+                        <label for="title">Project Title</label>
+                        <input type="text" id="title" name="title" class="form-control" required placeholder="e.g. AI-based Attendance System" value="{{ project.title if project else '' }}">
                     </div>
-                    <button class="btn-primary" style="margin-top: 15px;">Save Changes</button>
+
+                    <div class="form-group">
+                        <label for="domain">Domain</label>
+                        <select id="domain" name="domain" class="form-control">
+                            {% set domains = ['AI/ML', 'Web Development', 'App Development', 'IoT', 'Blockchain', 'Cybersecurity', 'Research', 'Other'] %}
+                            {% for d in domains %}
+                                <option value="{{ d }}" {% if project and project.domain == d %}selected{% endif %}>{{ d }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="description">Short Description</label>
+                        <textarea id="description" name="description" rows="4" class="form-control" required placeholder="Describe your project idea...">{{ project.description if project else '' }}</textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tech_stack">Tech Stack</label>
+                        <input type="text" id="tech_stack" name="tech_stack" class="form-control" placeholder="e.g. Python, React, Firebase" value="{{ project.tech_stack if project else '' }}">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="looking_for">Looking For</label>
+                        <input type="text" id="looking_for" name="looking_for" class="form-control" placeholder="e.g. 1 Frontend Dev, Mentor, Feedback" value="{{ project.looking_for if project else '' }}">
+                        <small style="color: #666;">Specify who you need: team members, mentors, or just review.</small>
+                    </div>
+
+                    <div style="margin-top: 20px;">
+                        <button type="submit" class="btn-primary">{% if is_edit %}Update Project{% else %}Post Project{% endif %}</button>
+                        <a href="{{ url_for('collaboration.community') }}" class="btn-secondary" style="margin-left: 10px; text-decoration: none; padding: 10px 20px; border-radius: 5px; background: #eee; color: #333;">Cancel</a>
+                    </div>
                 </form>
             </div>
         </div>
@@ -94,24 +122,16 @@
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const container = document.querySelector('.dashboard-container');
-            
             sidebar.classList.toggle('collapsed');
             container.classList.toggle('sidebar-collapsed');
-            
-            // Save state to local storage
             const isCollapsed = sidebar.classList.contains('collapsed');
             localStorage.setItem('sidebarCollapsed', isCollapsed);
         }
-
-        // Restore sidebar state on page load
         document.addEventListener('DOMContentLoaded', () => {
-            const sidebar = document.getElementById('sidebar');
-            const container = document.querySelector('.dashboard-container');
             const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
-            
             if (isCollapsed) {
-                sidebar.classList.add('collapsed');
-                container.classList.add('sidebar-collapsed');
+                document.getElementById('sidebar').classList.add('collapsed');
+                document.querySelector('.dashboard-container').classList.add('sidebar-collapsed');
             }
         });
     </script>

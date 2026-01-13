@@ -1,50 +1,140 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>My Join Requests</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/status_theme.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Join Requests | Anveshan</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/unstop_theme.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <a href="{{ url_for('student.dashboard') }}" class="logo-container">
+                    <div class="logo-icon">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <span class="logo-text">Anveshan</span>
+                </a>
+            </div>
+            
+            <div class="user-profile-sidebar">
+                <img src="{{ url_for('static', filename='uploads/profile_pics/' + (user.profile_photo if user.profile_photo else 'default.png')) }}" 
+                     alt="Profile" class="user-avatar-small"
+                     onerror="this.src='https://via.placeholder.com/150'">
+                <h4 style="margin: 0; font-size: 1.1rem;">{{ user.name or 'Student' }}</h4>
+                <p style="color: #666; font-size: 0.85rem;">{{ user.role|title }}</p>
+                <a href="{{ url_for('student.profile') }}" style="font-size: 0.8rem; color: var(--secondary-color);">Edit Profile</a>
+            </div>
 
-<header style="padding:18px 0;">
-    <div class="container" style="display:flex; justify-content:space-between;">
-        <h2 style="color:var(--muted);">My Join Requests</h2>
-        <a href="{{ url_for('student_dashboard') }}" class="btn btn--primary" style="position:fixed; top:18px; right:18px; z-index:60;">⬅ Back</a>
+            <ul class="sidebar-menu">
+                <li>
+                    <a href="{{ url_for('student.dashboard') }}">
+                        <i class="fas fa-th-large"></i> <span>Dashboard</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('collaboration.community') }}">
+                        <i class="fas fa-users-cog"></i> <span>Community</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('student.profile') }}">
+                        <i class="fas fa-user"></i> <span>My Profile</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('find_team.find_team') }}">
+                        <i class="fas fa-users"></i> <span>Find Team</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('find_team.my_join_requests') }}" class="active">
+                        <i class="fas fa-envelope"></i> <span>My Requests</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('auth.logout') }}">
+                        <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div style="margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center;">
+                    <button class="toggle-sidebar-btn" onclick="toggleSidebar()">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div>
+                        <h2 style="margin: 0;">My Join Requests</h2>
+                        <p style="color: var(--text-muted); margin: 0;">Status of requests you sent.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                {% if join_requests %}
+                    <div style="display: grid; gap: 20px;">
+                        {% for jr in join_requests %}
+                            <div style="border: 1px solid #eee; padding: 20px; border-radius: 8px; background: #fff;">
+                                <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 20px;">
+                                    <div>
+                                        <h4 style="margin: 0 0 10px 0; color: var(--primary-color);">To: {{ jr.team_owner }}'s Team</h4>
+                                        <p style="margin: 5px 0; color: var(--text-muted);"><i class="fas fa-trophy"></i> {{ jr.event_title }}</p>
+                                        <p style="margin: 5px 0;"><i class="fas fa-user"></i> {{ jr.name }}</p>
+                                        <p style="margin: 5px 0;"><i class="fas fa-graduation-cap"></i> {{ jr.branch }} ({{ jr.year }})</p>
+                                    </div>
+                                    
+                                    <div style="display: flex; align-items: center;">
+                                        {% if jr.status == 'accepted' %}
+                                            <span style="padding: 5px 15px; border-radius: 20px; background: #d4edda; color: #155724; font-weight: 600;">
+                                                <i class="fas fa-check-circle"></i> Accepted
+                                            </span>
+                                        {% elif jr.status == 'rejected' %}
+                                            <span style="padding: 5px 15px; border-radius: 20px; background: #f8d7da; color: #721c24; font-weight: 600;">
+                                                <i class="fas fa-times-circle"></i> Rejected
+                                            </span>
+                                        {% else %}
+                                            <span style="padding: 5px 15px; border-radius: 20px; background: #fff3cd; color: #856404; font-weight: 600;">
+                                                <i class="fas fa-clock"></i> Pending
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div style="text-align: center; padding: 30px;">
+                        <p style="color: var(--text-muted);">No join requests sent yet.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
     </div>
-</header>
 
-<div class="container">
-{% if join_requests %}
-    {% for jr in join_requests %}
-    <div class="card" style="margin-bottom:14px;">
-        <h3 style="color:var(--muted);">
-            Team: {{ jr.team_owner }} | Event: {{ jr.event_title }}
-        </h3>
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const container = document.querySelector('.dashboard-container');
+            sidebar.classList.toggle('collapsed');
+            container.classList.toggle('sidebar-collapsed');
+            const isCollapsed = sidebar.classList.contains('collapsed');
+            localStorage.setItem('sidebarCollapsed', isCollapsed);
+        }
 
-        <p><strong>Name:</strong> {{ jr.name }}</p>
-        <p><strong>Branch:</strong> {{ jr.branch }}</p>
-        <p><strong>Year:</strong> {{ jr.year }}</p>
-        <p><strong>Phone/LinkedIn:</strong> {{ jr.phone }}</p>
-
-        <!-- ✅ STATUS ONLY FOR STUDENT -->
-        <p>
-            Status:
-            {% if jr.status|lower == 'accepted' %}
-                <span class="badge badge--success">Accepted</span>
-            {% elif jr.status|lower == 'rejected' %}
-                <span class="badge badge--danger">Rejected</span>
-            {% else %}
-                <span class="badge badge--warning">Pending</span>
-            {% endif %}
-        </p>
-    </div>
-    {% endfor %}
-{% else %}
-    <p>No join requests yet.</p>
-{% endif %}
-</div>
-
+        document.addEventListener('DOMContentLoaded', () => {
+            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            if (isCollapsed) {
+                document.getElementById('sidebar').classList.add('collapsed');
+                document.querySelector('.dashboard-container').classList.add('sidebar-collapsed');
+            }
+        });
+    </script>
 </body>
 </html>

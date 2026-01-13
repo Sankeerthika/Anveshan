@@ -1,12 +1,30 @@
-
-from flask import Blueprint, request, redirect, url_for, flash, session, render_template, Response
+from flask import Blueprint, request, redirect, url_for, flash, session, render_template, Response, current_app
 from db import db
 import os
 import csv
 from datetime import datetime
+from werkzeug.utils import secure_filename
+import json
 
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg', 'gif', 'pdf'}
+
+def is_college_email(email: str) -> bool:
+    try:
+        e = (email or "").strip().lower()
+        if "@" not in e:
+            return False
+        domain = e.split("@")[-1]
+        allowed_domains = {"anurag.edu.in"}
+        return domain in allowed_domains
+    except Exception:
+        return False
 events_bp = Blueprint('events', __name__)
 from routes.club import club_bp
+
+# Ensure uploads directory exists
+UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'static', 'uploads')
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # Ensure questions table exists
 try:
@@ -37,7 +55,18 @@ def open_registration_form(event_id):
     if 'user_id' not in session:
         return redirect(url_for('auth.login'))
 
-    return render_template('hackathon_registration.html', event_id=event_id)
+    cursor = db.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM events WHERE id = %s", (event_id,))
+    event = cursor.fetchone()
+    cursor.execute("SELECT * FROM users WHERE id = %s", (session['user_id'],))
+    user = cursor.fetchone()
+    cursor.close()
+
+    if not event:
+        flash("Event not found", "danger")
+        return redirect(url_for('student_dashboard'))
+
+    return render_template('hackathon_registration.html', event=event, event_id=event_id, user=user)
 
 
 @events_bp.route('/submit-registration', methods=['POST'])
@@ -57,9 +86,15 @@ def submit_registration():
     lead_phone = request.form.get('lead_phone')
     lead_year = request.form.get('lead_year')
     lead_branch = request.form.get('lead_branch')
+    lead_section = request.form.get('lead_section')
 
-    if not all([team_name, project_title, lead_name, lead_email, lead_phone]):
-        flash("Please fill all required fields", "danger")
+    # Basic validation (Team Name/Project Title might be optional for some events)
+    if not all([lead_name, lead_email, lead_phone]):
+        flash("Please fill all required personal details", "danger")
+        return redirect(url_for('events.open_registration_form', event_id=event_id))
+
+    if not is_college_email(lead_email):
+        flash("Please use your college email address for registration.", "warning")
         return redirect(url_for('events.open_registration_form', event_id=event_id))
 
     payment_file = request.files.get('payment_screenshot')
@@ -76,12 +111,12 @@ def submit_registration():
         INSERT INTO event_registrations
         (event_id, team_name, domain, project_title,
          team_lead_name, team_lead_email, team_lead_phone,
-         team_lead_year, team_lead_branch, payment_screenshot)
-        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+         team_lead_year, team_lead_branch, team_lead_section, payment_screenshot)
+        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
     """, (
         event_id, team_name, domain, project_title,
         lead_name, lead_email, lead_phone,
-        lead_year, lead_branch, filename
+        lead_year, lead_branch, lead_section, filename
     ))
 
     registration_id = cursor.lastrowid
@@ -91,26 +126,38 @@ def submit_registration():
     member_emails = request.form.getlist('member_email[]')
     member_years = request.form.getlist('member_year[]')
     member_branches = request.form.getlist('member_branch[]')
+    member_sections = request.form.getlist('member_section[]')
 
     for i in range(len(member_names)):
         if member_names[i].strip():
+            # Ensure lists are long enough (handle potential index errors if form is inconsistent)
+            m_year = member_years[i] if i < len(member_years) else None
+            m_branch = member_branches[i] if i < len(member_branches) else None
+            m_section = member_sections[i] if i < len(member_sections) else None
+            m_email = member_emails[i] if i < len(member_emails) else None
+            if m_email and not is_college_email(m_email):
+                flash("Team member emails must be college email addresses.", "warning")
+                cursor.close()
+                return redirect(url_for('events.open_registration_form', event_id=event_id))
+
             cursor.execute("""
                 INSERT INTO event_team_members
-                (registration_id, member_name, member_email, year, branch)
-                VALUES (%s,%s,%s,%s,%s)
+                (registration_id, member_name, member_email, year, branch, section)
+                VALUES (%s,%s,%s,%s,%s,%s)
             """, (
                 registration_id,
                 member_names[i],
                 member_emails[i],
-                member_years[i],
-                member_branches[i]
+                m_year,
+                m_branch,
+                m_section
             ))
 
     db.commit()
     cursor.close()
 
     flash("🎉 Registration successful!", "success")
-    return redirect(url_for('student_dashboard'))
+    return redirect(url_for('student.dashboard'))
 
 
 # ================================
@@ -130,19 +177,79 @@ def submit_question():
 
     # get student email
     cursor = db.cursor()
-    cursor.execute("SELECT email FROM users WHERE id = %s", (session['user_id'],))
-    user = cursor.fetchone()
-    student_email = user[0] if user else None
+    cursor.execute("SELECT email FROM users WHERE id=%s", (session['user_id'],))
+    student_email = cursor.fetchone()[0]
 
-    cursor.execute(
-        "INSERT INTO event_questions (event_id, student_email, question) VALUES (%s,%s,%s)",
-        (event_id, student_email, question)
-    )
+    cursor.execute("""
+        INSERT INTO event_questions (event_id, student_email, question)
+        VALUES (%s, %s, %s)
+    """, (event_id, student_email, question))
     db.commit()
     cursor.close()
 
-    flash('Your question has been submitted.', 'success')
+    flash('Question submitted!', 'success')
     return redirect(url_for('student_dashboard'))
+
+
+# ================================
+# CLUB: CREATE EVENT / HACKATHON
+# ================================
+
+@events_bp.route('/create-hackathon', methods=['GET', 'POST'])
+def create_hackathon():
+    if 'user_id' not in session or session.get('role') != 'club':
+        flash("Unauthorized access", "danger")
+        return redirect(url_for('auth.login'))
+
+    if request.method == 'POST':
+        title = request.form.get('title')
+        description = request.form.get('description')
+        event_date = request.form.get('event_date')
+        deadline = request.form.get('deadline')
+        mode = request.form.get('mode')
+        venue = request.form.get('venue')
+        
+        # Hackathon specific
+        min_team_size = request.form.get('min_team_size', 1)
+        max_team_size = request.form.get('max_team_size', 4)
+        registration_fee = request.form.get('registration_fee', 0)
+        
+        girls_discount_enabled = 1 if request.form.get('girls_discount_enabled') else 0
+        girls_team_discount = request.form.get('girls_team_discount', 0)
+
+        domains = ",".join(request.form.getlist('domains[]')) if request.form.getlist('domains[]') else None
+
+        cursor = db.cursor()
+        try:
+            cursor.execute("""
+                INSERT INTO events
+                (title, event_type, description, event_date, deadline, mode, venue, 
+                 created_by, min_team_size, max_team_size, registration_fee,
+                 girls_discount_enabled, girls_team_discount, domains)
+                VALUES (%s, 'hackathon', %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, (
+                title, description, event_date, deadline, mode, venue,
+                session['user_id'], min_team_size, max_team_size, registration_fee,
+                girls_discount_enabled, girls_team_discount, domains
+            ))
+            db.commit()
+            flash("✅ Hackathon created successfully!", "success")
+            return redirect(url_for('events.create_event'))
+        except Exception as e:
+            db.rollback()
+            print(f"Error creating hackathon: {e}")
+            flash("Error creating hackathon. Please try again.", "danger")
+        finally:
+            cursor.close()
+
+    cursor = db.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM users WHERE id = %s", (session['user_id'],))
+    user = cursor.fetchone()
+    cursor.close()
+
+    return render_template('create_hackathon.html', user=user)
+
+
 
 
 @events_bp.route('/edit-question/<int:qid>', methods=['GET', 'POST'])
@@ -154,7 +261,7 @@ def edit_question(qid):
     cursor = db.cursor(dictionary=True)
 
     # ensure this student owns the question
-    cursor.execute("SELECT email FROM users WHERE id = %s", (session['user_id'],))
+    cursor.execute("SELECT * FROM users WHERE id = %s", (session['user_id'],))
     u = cursor.fetchone()
     student_email = u['email'] if u else None
 
@@ -187,7 +294,7 @@ def edit_question(qid):
         return redirect(url_for('student_dashboard'))
 
     cursor.close()
-    return render_template('edit_question.html', q=q)
+    return render_template('edit_question.html', q=q, user=u)
 
 
 # ================================
@@ -201,6 +308,10 @@ def club_questions():
 
     cursor = db.cursor(dictionary=True)
 
+    # Fetch user for sidebar
+    cursor.execute("SELECT * FROM users WHERE id = %s", (session['user_id'],))
+    user = cursor.fetchone()
+
     # fetch questions for events created by this club
     cursor.execute('''
         SELECT q.*, e.title AS event_title
@@ -212,7 +323,7 @@ def club_questions():
 
     questions = cursor.fetchall()
     cursor.close()
-    return render_template('club_questions.html', questions=questions)
+    return render_template('club_questions.html', questions=questions, user=user)
 
 
 @club_bp.route('/answer-question/<int:qid>', methods=['GET', 'POST'])
@@ -253,14 +364,21 @@ def create_event():
         flash("Unauthorized access", "danger")
         return redirect(url_for('auth.login'))
 
+    cursor = db.cursor(dictionary=True)
+
     if request.method == 'POST':
         title = request.form.get('title')
+        event_type = request.form.get('event_type')
+        description = request.form.get('description')
+        event_date = request.form.get('event_date')
         deadline = request.form.get('deadline')
-        club_name = request.form.get('club_name')
+        mode = request.form.get('mode')
+        venue = request.form.get('venue')
+        organizer = request.form.get('organizer') or request.form.get('club_name')
+        
+        # Default values if not provided
         organising_department = request.form.get('organising_department')
-        domains = ",".join(request.form.getlist('domains[]'))
-
-        cursor = db.cursor(dictionary=True)
+        domains = ",".join(request.form.getlist('domains[]')) if request.form.getlist('domains[]') else None
 
         # 🔍 CHECK DUPLICATE EVENT
         cursor.execute("""
@@ -273,28 +391,45 @@ def create_event():
         existing_event = cursor.fetchone()
 
         if existing_event:
-            flash("⚠️ This hackathon already exists!", "warning")
+            flash("⚠️ This event already exists!", "warning")
             cursor.close()
-            return redirect(url_for('club.club_dashboard'))
+            return redirect(url_for('events.create_event'))
 
-        # ✅ INSERT ONLY IF NOT EXISTS
-        cursor.execute("""
-            INSERT INTO events
-            (title, domains, deadline, club_name, organising_department, created_by)
-            VALUES (%s,%s,%s,%s,%s,%s)
-        """, (
-            title, domains, deadline,
-            club_name, organising_department,
-            session['user_id']
-        ))
-
-        db.commit()
+        # ✅ INSERT
+        try:
+            cursor.execute("""
+                INSERT INTO events
+                (title, event_type, description, event_date, deadline, mode, venue, organizer, 
+                 domains, organising_department, created_by)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            """, (
+                title, event_type, description, event_date, deadline, mode, venue, organizer,
+                domains, organising_department, session['user_id']
+            ))
+            db.commit()
+            flash("✅ Event created successfully!", "success")
+        except Exception as e:
+            db.rollback()
+            print(f"Error creating event: {e}")
+            flash("Error creating event. Please try again.", "danger")
+        
         cursor.close()
+        return redirect(url_for('events.create_event'))
 
-        flash("✅ Hackathon created successfully!", "success")
-        return redirect(url_for('club.club_dashboard'))
+    # GET: Fetch all events created by this club
+    cursor.execute("""
+        SELECT * FROM events 
+        WHERE created_by = %s 
+        ORDER BY created_at DESC
+    """, (session['user_id'],))
+    events = cursor.fetchall()
 
-    return render_template('create_event.html')
+    cursor.execute("SELECT * FROM users WHERE id = %s", (session['user_id'],))
+    user = cursor.fetchone()
+
+    cursor.close()
+
+    return render_template('create_event.html', events=events, user=user)
 
 
 # ================================
@@ -309,18 +444,25 @@ def view_registrations():
     cursor = db.cursor(dictionary=True)
     
     try:
+        selected_event_id = request.args.get('event_id')
+        event_filter_clause = ""
+        params = [session['user_id']]
+        if selected_event_id:
+            event_filter_clause = " AND r.event_id = %s"
+            params.append(selected_event_id)
+
         # Base query to get all registrations for events created by this club
-        query = """
+        query = f"""
             SELECT 
                 r.*,
                 e.title AS event_title
             FROM event_registrations r
             JOIN events e ON e.id = r.event_id
-            WHERE e.created_by = %s
+            WHERE e.created_by = %s{event_filter_clause}
             ORDER BY r.created_at DESC
         """
         
-        cursor.execute(query, (session['user_id'],))
+        cursor.execute(query, tuple(params))
         registrations = cursor.fetchall()
         
         # For each registration, get team members
@@ -340,28 +482,54 @@ def view_registrations():
             reg['team_size'] = len(members) + 1  # +1 for team lead
 
         # Get unique values for filters
-        cursor.execute("""
+        branch_query = f"""
             SELECT DISTINCT team_lead_branch as branch 
             FROM event_registrations r
             JOIN events e ON e.id = r.event_id
-            WHERE e.created_by = %s AND team_lead_branch IS NOT NULL
-        """, (session['user_id'],))
+            WHERE e.created_by = %s AND team_lead_branch IS NOT NULL{event_filter_clause}
+        """
+        cursor.execute(branch_query, tuple(params))
         branches = [row['branch'] for row in cursor.fetchall()]
 
-        cursor.execute("""
+        year_query = f"""
             SELECT DISTINCT team_lead_year as year 
             FROM event_registrations r
             JOIN events e ON e.id = r.event_id
-            WHERE e.created_by = %s AND team_lead_year IS NOT NULL
-        """, (session['user_id'],))
+            WHERE e.created_by = %s AND team_lead_year IS NOT NULL{event_filter_clause}
+        """
+        cursor.execute(year_query, tuple(params))
         years = [row['year'] for row in cursor.fetchall()]
 
-        cursor.execute("""
+        domain_query = f"""
             SELECT DISTINCT domain 
             FROM event_registrations 
             WHERE domain IS NOT NULL
-        """)
+        """
+        # domain is not tied to created_by table in current schema; when filtering by event, restrict via registration ids
+        if selected_event_id:
+            domain_query += " AND event_id = %s"
+            cursor.execute(domain_query, (selected_event_id,))
+        else:
+            cursor.execute(domain_query)
         domains = [row['domain'] for row in cursor.fetchall()]
+
+        # Events list for selector
+        cursor.execute("""
+            SELECT id, title
+            FROM events
+            WHERE created_by = %s
+            ORDER BY id DESC
+        """, (session['user_id'],))
+        events_list = cursor.fetchall()
+
+        cursor.execute("SELECT * FROM users WHERE id = %s", (session['user_id'],))
+        user = cursor.fetchone()
+
+        selected_event_title = None
+        if selected_event_id:
+            cursor.execute("SELECT title FROM events WHERE id = %s AND created_by = %s", (selected_event_id, session['user_id']))
+            ev = cursor.fetchone()
+            selected_event_title = ev['title'] if ev else None
 
         return render_template(
             'view_registrations.html',
@@ -371,7 +539,11 @@ def view_registrations():
             domains=sorted(domains),
             selected_branch=request.args.get('branch', ''),
             selected_year=request.args.get('year', ''),
-            selected_domain=request.args.get('domain', '')
+            selected_domain=request.args.get('domain', ''),
+            selected_event_id=selected_event_id or '',
+            selected_event_title=selected_event_title,
+            events_list=events_list,
+            user=user
         )
 
     except Exception as e:
@@ -393,6 +565,13 @@ def download_registrations():
 
     cursor = db.cursor(dictionary=True)
 
+    selected_event_id = request.args.get('event_id')
+    event_filter_clause = ""
+    params = [session['user_id']]
+    if selected_event_id:
+        event_filter_clause = " AND r.event_id = %s"
+        params.append(selected_event_id)
+
     cursor.execute("""
         SELECT
             e.title AS event_title,
@@ -410,10 +589,10 @@ def download_registrations():
         FROM event_registrations r
         JOIN events e ON e.id = r.event_id
         LEFT JOIN event_team_members tm ON tm.registration_id = r.id
-        WHERE e.created_by = %s
+        WHERE e.created_by = %s""" + event_filter_clause + """
         GROUP BY r.id
         ORDER BY r.id DESC
-    """, (session['user_id'],))
+    """, tuple(params))
 
     rows = cursor.fetchall()
     cursor.close()

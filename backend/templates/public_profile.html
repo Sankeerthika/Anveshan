@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ profile.name }} | Anveshan</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/unstop_theme.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <a href="{{ url_for('student.dashboard') }}" class="logo-container">
+                    <div class="logo-icon">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <span class="logo-text">Anveshan</span>
+                </a>
+            </div>
+            
+            <div class="user-profile-sidebar">
+                <img src="{{ url_for('static', filename='uploads/profile_pics/' + (user.profile_photo if user.profile_photo else 'default.png')) }}" 
+                     alt="Profile" class="user-avatar-small"
+                     onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><rect width=%27100%27 height=%27100%27 fill=%27%23e0e0e0%27/><text x=%2750%27 y=%2755%27 font-size=%2712%27 text-anchor=%27middle%27 fill=%27%23666%27>Avatar</text></svg>'">
+                <h4 style="margin: 0; font-size: 1.1rem;">{{ user.name or 'Student' }}</h4>
+                <p style="color: #666; font-size: 0.85rem;">{{ user.role|title }}</p>
+                <a href="{{ url_for('student.profile') }}" style="font-size: 0.8rem; color: var(--secondary-color);">Edit Profile</a>
+            </div>
+
+            <ul class="sidebar-menu">
+                <li>
+                    <a href="{{ url_for('student.dashboard') }}">
+                        <i class="fas fa-th-large"></i> Dashboard
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('collaboration.community') }}" class="active">
+                        <i class="fas fa-users-cog"></i> Community
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('collaboration.faculty_profile') if user.role == 'faculty' else url_for('student.profile') }}">
+                        <i class="fas fa-user"></i> My Profile
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('find_team.find_team') }}">
+                        <i class="fas fa-users"></i> Find Team
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('find_team.my_join_requests') }}">
+                        <i class="fas fa-envelope"></i> My Requests
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('auth.logout') }}">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header" style="margin-bottom: 30px; display: flex; align-items: center;">
+                <button class="toggle-sidebar-btn" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div style="margin-left: 15px;">
+                    <a href="{{ url_for('collaboration.community') }}" style="text-decoration: none; color: #666; font-size: 0.9rem;">
+                        <i class="fas fa-arrow-left"></i> Back to Community
+                    </a>
+                    <h2 style="margin: 5px 0 0 0;">Public Profile</h2>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 30px;">
+                <!-- Profile Card -->
+                <div class="card" style="text-align: center;">
+                    <img src="{{ url_for('static', filename='uploads/profile_pics/' + (profile.profile_photo if profile.profile_photo else 'default.png')) }}" 
+                         alt="Profile" 
+                         style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover; margin-bottom: 20px; border: 4px solid #fff; box-shadow: 0 5px 15px rgba(0,0,0,0.1);"
+                         onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><rect width=%27100%27 height=%27100%27 fill=%27%23e0e0e0%27/><text x=%2750%27 y=%2755%27 font-size=%2712%27 text-anchor=%27middle%27 fill=%27%23666%27>Avatar</text></svg>'">
+                    
+                    <h2 style="margin-bottom: 5px;">{{ profile.name }}</h2>
+                    <p style="color: #666; margin-bottom: 20px;">{{ profile.role|title }}</p>
+
+                    <div style="margin-bottom: 20px;">
+                        {% if profile.branch or profile.year %}
+                            <p style="margin: 5px 0; font-size: 0.9rem;">
+                                <i class="fas fa-graduation-cap" style="color: #888; margin-right: 5px;"></i>
+                                {{ profile.branch }} {{ '(' + profile.year + ')' if profile.year }}
+                            </p>
+                        {% endif %}
+                        <p style="margin: 5px 0; font-size: 0.9rem;">
+                            <i class="fas fa-envelope" style="color: #888; margin-right: 5px;"></i>
+                            {{ profile.email }}
+                        </p>
+                    </div>
+
+                    <div style="display: flex; justify-content: center; gap: 15px; margin-bottom: 20px;">
+                        {% if profile.github_url %}
+                        <a href="{{ profile.github_url }}" target="_blank" class="btn-icon" style="color: #333;"><i class="fab fa-github fa-2x"></i></a>
+                        {% endif %}
+                        {% if profile.linkedin_url %}
+                        <a href="{{ profile.linkedin_url }}" target="_blank" class="btn-icon" style="color: #0077b5;"><i class="fab fa-linkedin fa-2x"></i></a>
+                        {% endif %}
+                        {% if profile.portfolio_url %}
+                        <a href="{{ profile.portfolio_url }}" target="_blank" class="btn-icon" style="color: #ea4c89;"><i class="fas fa-globe fa-2x"></i></a>
+                        {% endif %}
+                        {% if profile.medium_url %}
+                        <a href="{{ profile.medium_url }}" target="_blank" class="btn-icon" style="color: #000;"><i class="fab fa-medium fa-2x"></i></a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Bio & Projects -->
+                <div>
+                    <div class="card" style="margin-bottom: 20px;">
+                        <h3 class="card-title">About</h3>
+                        <p style="line-height: 1.6; color: #444;">{{ profile.bio or 'No bio provided.' }}</p>
+                        
+                        <div style="margin-top: 20px;">
+                            <h4 style="font-size: 1rem; margin-bottom: 10px;">Skills</h4>
+                            <div>
+                                {% if profile.skills %}
+                                    {% for skill in profile.skills.split(',') %}
+                                        <span class="skill-tag" style="background: #e8f5e9; color: #2e7d32; padding: 5px 12px; border-radius: 15px; font-size: 0.9rem; margin-right: 5px; display: inline-block; margin-bottom: 5px;">{{ skill.strip() }}</span>
+                                    {% endfor %}
+                                {% else %}
+                                    <span style="color: #999;">No skills listed</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                         <div style="margin-top: 20px;">
+                            <h4 style="font-size: 1rem; margin-bottom: 10px;">Interests</h4>
+                            <div>
+                                {% if profile.interests %}
+                                    {% for interest in profile.interests.split(',') %}
+                                        <span class="skill-tag" style="background: #fff3e0; color: #ef6c00; padding: 5px 12px; border-radius: 15px; font-size: 0.9rem; margin-right: 5px; display: inline-block; margin-bottom: 5px;">{{ interest.strip() }}</span>
+                                    {% endfor %}
+                                {% else %}
+                                    <span style="color: #999;">No interests listed</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3 style="margin-bottom: 15px;">Projects</h3>
+                    {% if projects %}
+                        {% for project in projects %}
+                        <div class="card" style="margin-bottom: 15px; cursor: pointer;" onclick="window.location.href='{{ url_for('collaboration.project_details', project_id=project.id) }}'">
+                            <div style="display: flex; justify-content: space-between;">
+                                <h4 style="margin: 0 0 5px 0; color: var(--primary-color);">{{ project.title }}</h4>
+                                <span style="font-size: 0.8rem; color: #888;">{{ project.created_at.strftime('%b %d, %Y') }}</span>
+                            </div>
+                            <p style="color: #666; margin-bottom: 10px;">{{ project.description }}</p>
+                            <span class="badge" style="background: #f5f5f5; color: #666; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem;">{{ project.domain }}</span>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="card" style="text-align: center; color: #666;">
+                            <p>No projects posted yet.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const container = document.querySelector('.dashboard-container');
+            sidebar.classList.toggle('collapsed');
+            container.classList.toggle('sidebar-collapsed');
+            const isCollapsed = sidebar.classList.contains('collapsed');
+            localStorage.setItem('sidebarCollapsed', isCollapsed);
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            if (isCollapsed) {
+                document.getElementById('sidebar').classList.add('collapsed');
+                document.querySelector('.dashboard-container').classList.add('sidebar-collapsed');
+            }
+        });
+    </script>
+</body>
+</html>
