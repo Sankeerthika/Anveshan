@@ -15,7 +15,7 @@
             <div class="sidebar-header">
                 <a href="{{ url_for('student.dashboard') }}" class="logo-container">
                     <div class="logo-icon">
-                        <i class="fas fa-search"></i>
+                        <i class="fas fa-rocket"></i>
                     </div>
                     <span class="logo-text">Anveshan</span>
                 </a>
@@ -66,23 +66,94 @@
 
         <!-- Main Content -->
         <div class="main-content">
-            <!-- Welcome Header -->
-            <div style="margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <h2 style="margin: 0;">Welcome back, {{ user.name.split()[0] if user.name else 'Student' }}! 👋</h2>
-                    <p style="color: var(--text-muted);">Explore opportunities and manage your participation.</p>
-                </div>
-                <!-- Profile Completion Widget (Simple) -->
-                {% if not user.branch or not user.year %}
-                <div style="background: #fff3cd; padding: 10px 20px; border-radius: 8px; color: #856404; display: flex; align-items: center;">
-                    <i class="fas fa-exclamation-circle" style="margin-right: 10px;"></i>
+            <div style="margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <button class="toggle-sidebar-btn" onclick="toggleSidebar()" style="border:none; background:#eef3ff; color: var(--primary-color); width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center;">
+                        <i class="fas fa-bars"></i>
+                    </button>
                     <div>
-                        <strong>Complete your profile!</strong><br>
-                        <a href="{{ url_for('student.profile') }}" style="color: inherit; text-decoration: underline;">Update now</a>
+                        <h2 style="margin: 0; letter-spacing:-0.2px;">Welcome back, {{ user.name.split()[0] if user.name else 'Student' }} 👋</h2>
+                        <p style="color: var(--text-muted); margin:0;">Discover opportunities and track your progress</p>
                     </div>
                 </div>
+                {% if not user.branch or not user.year %}
+                <a href="{{ url_for('student.profile') }}" style="background:#fff3cd; color:#856404; padding:10px 14px; border-radius:10px; text-decoration:none; font-weight:600; display:flex; align-items:center; gap:8px;">
+                    <i class="fas fa-exclamation-circle"></i> Complete your profile
+                </a>
                 {% endif %}
             </div>
+
+            {% set registered_list = events|selectattr('team')|list if events else [] %}
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-bottom: 24px;">
+                <div class="card" style="padding:18px; display:flex; align-items:center; gap:12px;">
+                    <div style="width:44px; height:44px; border-radius:10px; background:#e6f0ff; display:flex; align-items:center; justify-content:center; color:var(--primary-color);">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <div>
+                        <div style="font-size:0.85rem; color:var(--text-muted);">Registered</div>
+                        <div style="font-weight:800; font-size:1.4rem;">{{ registered_list|length }}</div>
+                    </div>
+                </div>
+                <div class="card" style="padding:18px; display:flex; align-items:center; gap:12px;">
+                    <div style="width:44px; height:44px; border-radius:10px; background:#e9f9ee; display:flex; align-items:center; justify-content:center; color:#2e7d32;">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <div>
+                        <div style="font-size:0.85rem; color:var(--text-muted);">Upcoming</div>
+                        <div style="font-weight:800; font-size:1.4rem;">{{ events|length if events else 0 }}</div>
+                    </div>
+                </div>
+                <div class="card" style="padding:18px; display:flex; align-items:center; gap:12px;">
+                    <div style="width:44px; height:44px; border-radius:10px; background:#e8f6fd; display:flex; align-items:center; justify-content:center; color:#3498db;">
+                        <i class="fas fa-chalkboard-teacher"></i>
+                    </div>
+                    <div>
+                        <div style="font-size:0.85rem; color:var(--text-muted);">Collaborations</div>
+                        <div style="font-weight:800; font-size:1.4rem;">{{ collaborations|length if collaborations else 0 }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <form method="GET" action="{{ url_for('student.dashboard') }}" style="display:grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr; gap:10px; align-items:end; margin-bottom:18px;">
+                <div class="form-group">
+                    <label style="font-size:0.85rem; color:var(--text-muted);">Search</label>
+                    <input type="text" name="q" value="{{ search_query or '' }}" class="form-control" placeholder="Title, organizer, description">
+                </div>
+                <div class="form-group">
+                    <label style="font-size:0.85rem; color:var(--text-muted);">Type</label>
+                    <select name="type" class="form-control">
+                        <option value="" {% if not type_filter %}selected{% endif %}>All</option>
+                        <option value="hackathon" {% if type_filter=='hackathon' %}selected{% endif %}>Hackathon</option>
+                        <option value="workshop" {% if type_filter=='workshop' %}selected{% endif %}>Workshop</option>
+                        <option value="techtalk" {% if type_filter=='techtalk' %}selected{% endif %}>Tech Talk</option>
+                        <option value="project" {% if type_filter=='project' %}selected{% endif %}>Project</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label style="font-size:0.85rem; color:var(--text-muted);">Domain</label>
+                    <input type="text" name="domain" value="{{ domain_filter or '' }}" class="form-control" placeholder="AI, Web, IoT">
+                </div>
+                <div class="form-group">
+                    <label style="font-size:0.85rem; color:var(--text-muted);">Mode</label>
+                    <select name="mode" class="form-control">
+                        <option value="" {% if not mode_filter %}selected{% endif %}>Any</option>
+                        <option value="online" {% if mode_filter=='online' %}selected{% endif %}>Online</option>
+                        <option value="offline" {% if mode_filter=='offline' %}selected{% endif %}>Offline</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label style="font-size:0.85rem; color:var(--text-muted);">From</label>
+                    <input type="date" name="from_date" value="{{ from_date_str or '' }}" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label style="font-size:0.85rem; color:var(--text-muted);">To</label>
+                    <input type="date" name="to_date" value="{{ to_date_str or '' }}" class="form-control">
+                </div>
+                <div style="grid-column: span 6; display:flex; gap:10px; justify-content:flex-end;">
+                    <button class="btn-apply" style="padding:10px 16px;">Apply Filters</button>
+                    <a href="{{ url_for('student.dashboard') }}" class="btn-apply" style="background:#eef3ff; color:var(--primary-color); padding:10px 16px;">Reset</a>
+                </div>
+            </form>
 
             <!-- EVENTS SECTION -->
             <div class="card" style="background: transparent; box-shadow: none; padding: 0;">
@@ -93,7 +164,7 @@
                 {% if events and events|length > 0 %}
                     <div class="event-grid">
                         {% for event in events %}
-                            <div class="event-card">
+                            <div class="event-card" style="overflow:hidden;">
                                 <span class="event-tag">{{ event.event_type|upper }}</span>
                                 <div class="event-image">
                                     <i class="fas fa-calendar-alt fa-3x"></i>
@@ -111,15 +182,21 @@
                                         <i class="fas fa-map-marker-alt"></i> {{ event.mode|title }}
                                     </div>
 
-                                    {% if event.team %}
-                                        <div style="margin-top: auto; text-align: center; padding: 10px; background: #d4edda; color: #155724; border-radius: 8px; font-weight: 600;">
-                                            <i class="fas fa-check-circle"></i> Registered
+                                    {% if event.target_years %}
+                                        <div class="event-meta">
+                                            <i class="fas fa-graduation-cap"></i>
+                                            For: {{ event.target_years }}
                                         </div>
-                                    {% else %}
-                                        <a href="{{ url_for('events.open_registration_form', event_id=event.id) }}" class="btn-apply">
-                                            Register Now
+                                    {% endif %}
+
+                                    {% if event.external_registration_link %}
+                                        <a href="{{ event.external_registration_link }}" target="_blank" rel="noopener" class="btn-apply">
+                                            Register on External Site
                                         </a>
                                     {% endif %}
+                                    <a href="{{ url_for('events.event_questions', event_id=event.id) }}" class="btn-apply" style="background:#eef3ff; color: var(--primary-color);">
+                                        Ask Doubt / View Q&A
+                                    </a>
                                 </div>
                             </div>
                         {% endfor %}

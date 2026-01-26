@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Post Announcement | Anveshan</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/unstop_theme.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <a href="{{ url_for('club.club_dashboard') }}" class="logo-container">
+                    <div class="logo-icon">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <span class="logo-text">Anveshan</span>
+                </a>
+            </div>
+
+            <div class="user-profile-sidebar">
+                <div style="width: 80px; height: 80px; background: #e0e0e0; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px auto; color: #666; font-size: 30px;">
+                    <i class="fas fa-users"></i>
+                </div>
+                <h4 style="margin: 0; font-size: 1.1rem;">{{ club.name if club else 'Club Admin' }}</h4>
+                <p style="color: #666; font-size: 0.85rem;">Organizer</p>
+            </div>
+
+            <ul class="sidebar-menu">
+                <li>
+                    <a href="{{ url_for('club.club_dashboard') }}">
+                        <i class="fas fa-th-large"></i> Dashboard
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('club.post_announcement_page') }}" class="active">
+                        <i class="fas fa-bullhorn"></i> Post Announcement
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('club.club_questions') }}">
+                        <i class="fas fa-question-circle"></i> Inquiries
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('auth.logout') }}">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="main-content">
+            <div style="margin-bottom: 24px; display: flex; align-items: center;">
+                <button class="toggle-sidebar-btn" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div style="margin-left: 12px;">
+                    <h2 style="margin: 0;">{% if event %}Edit Hackathon{% else %}Post Hackathon Announcement{% endif %}</h2>
+                    <p style="color: var(--text-muted); margin: 0;">Share your poster and registration link with targeted years</p>
+                </div>
+                <a href="{{ url_for('club.club_dashboard') }}" class="btn-primary" style="margin-left: auto; text-decoration: none;">Back to Dashboard</a>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="card" style="padding:12px; margin-bottom:12px; border-left:4px solid {% if category=='success' %}#28a745{% elif category=='danger' %}#dc3545{% else %}#1C4980{% endif %};">
+                            <div style="color: var(--text-color);">{{ message }}</div>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <div class="card" style="max-width: 900px; margin: 0 auto;">
+                <form method="POST" action="{{ url_for('club.update_announcement', event_id=event.id) if event else url_for('club.post_announcement') }}" enctype="multipart/form-data">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div class="form-group" style="grid-column: span 2;">
+                            <label>Title</label>
+                            <input type="text" name="title" class="form-control" required placeholder="e.g., CodeSprint 2025" value="{{ event.title if event else '' }}">
+                        </div>
+                        <div class="form-group" style="grid-column: span 2;">
+                            <label>External Registration Link</label>
+                            <input type="url" name="external_registration_link" class="form-control" required placeholder="https://registration-link.com" value="{{ event.external_registration_link if event else '' }}">
+                        </div>
+                        <div class="form-group" style="grid-column: span 2;">
+                            <label>Short Description (optional)</label>
+                            <textarea name="description" rows="3" class="form-control" placeholder="Brief details or theme">{{ event.description if event else '' }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Poster (optional)</label>
+                            <input type="file" name="poster" accept="image/*" class="form-control" onchange="previewPoster(this)">
+                        </div>
+                        <div class="form-group">
+                            <label>Registration End Date</label>
+                            <input type="date" name="registration_end_date" class="form-control" required value="{{ event.deadline if event else '' }}">
+                        </div>
+                        <div class="form-group">
+                            <label>Target Years</label>
+                            <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                                {% set tys = (event.target_years.split(',') if event and event.target_years else []) %}
+                                <label><input type="checkbox" name="target_years[]" value="1st" {% if '1st' in tys %}checked{% endif %}> 1st</label>
+                                <label><input type="checkbox" name="target_years[]" value="2nd" {% if '2nd' in tys %}checked{% endif %}> 2nd</label>
+                                <label><input type="checkbox" name="target_years[]" value="3rd" {% if '3rd' in tys %}checked{% endif %}> 3rd</label>
+                                <label><input type="checkbox" name="target_years[]" value="4th" {% if '4th' in tys %}checked{% endif %}> 4th</label>
+                            </div>
+                            <div style="margin-top:6px; font-size:0.85rem; color: var(--text-muted);">Leave all unchecked to target all years.</div>
+                        </div>
+                        <div class="form-group" style="grid-column: span 2;">
+                            <div id="poster-preview" style="display:none; margin-top: 10px;">
+                                <img id="poster-img" alt="Poster" style="max-width: 100%; border-radius: 8px;"/>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary" style="margin-top: 16px;">
+                        <i class="fas fa-save"></i> {% if event %}Save Changes{% else %}Post Announcement{% endif %}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const container = document.querySelector('.dashboard-container');
+            sidebar.classList.toggle('collapsed');
+            container.classList.toggle('sidebar-collapsed');
+            const isCollapsed = sidebar.classList.contains('collapsed');
+            localStorage.setItem('sidebarCollapsed', isCollapsed);
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            if (isCollapsed) {
+                document.getElementById('sidebar').classList.add('collapsed');
+                document.querySelector('.dashboard-container').classList.add('sidebar-collapsed');
+            }
+        });
+        function previewPoster(input) {
+            const file = input.files && input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.getElementById('poster-img');
+                img.src = e.target.result;
+                document.getElementById('poster-preview').style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+    </script>
+</body>
+</html>

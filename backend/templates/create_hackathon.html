@@ -36,13 +36,8 @@
                     </a>
                 </li>
                 <li>
-                    <a href="{{ url_for('events.create_event') }}" class="active">
-                        <i class="fas fa-calendar-plus"></i> Manage Events
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url_for('events.view_registrations') }}">
-                        <i class="fas fa-list-alt"></i> Registrations
+                    <a href="{{ url_for('club.post_announcement_page') }}">
+                        <i class="fas fa-bullhorn"></i> Post Announcement
                     </a>
                 </li>
                 <li>
@@ -142,31 +137,38 @@
                         </div>
                     </div>
 
-                    <!-- Fees & Discounts -->
-                    <h4 style="margin-top: 30px; border-bottom: 1px solid #eee; padding-bottom: 10px; color: var(--primary-color);">Registration Fee</h4>
-                    <div class="row" style="margin-bottom: 15px;">
-                        <div class="col-md-6" style="width: 50%;">
-                            <label style="font-weight: 500; margin-bottom: 5px; display: block;">Fee Amount (₹)</label>
-                            <input type="number" name="registration_fee" class="form-control" value="0" min="0" step="0.01" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
-                        </div>
-                    </div>
-                    
+                    <!-- Poster, Link & Audience -->
+                    <h4 style="margin-top: 30px; border-bottom: 1px solid #eee; padding-bottom: 10px; color: var(--primary-color);">Poster, Registration & Audience</h4>
                     <div class="form-group" style="margin-bottom: 15px;">
-                        <label>
-                            <input type="checkbox" name="girls_discount_enabled" value="1" id="girlsDiscountCheck"> 
-                            Enable All-Girls Team Discount?
-                        </label>
-                    </div>
-                    <div class="form-group" id="girlsDiscountInput" style="display:none; margin-bottom: 15px;">
-                        <label style="font-weight: 500; margin-bottom: 5px; display: block;">Discount Amount (₹)</label>
-                        <input type="number" name="girls_team_discount" class="form-control" value="0" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                        <label style="font-weight: 500; margin-bottom: 5px; display: block;">Hackathon Poster (optional)</label>
+                        <input type="file" name="poster" accept="image/*" class="form-control" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
                     </div>
 
-                    <script>
-                        document.getElementById('girlsDiscountCheck').addEventListener('change', function() {
-                            document.getElementById('girlsDiscountInput').style.display = this.checked ? 'block' : 'none';
-                        });
-                    </script>
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label style="font-weight: 500; margin-bottom: 5px; display: block;">External Registration Link</label>
+                        <input type="url" name="external_registration_link" class="form-control" placeholder="https://registration-link.com" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 10px;">
+                        <label style="font-weight: 500; margin-bottom: 5px; display: block;">Target Years</label>
+                        <div style="display: flex; flex-wrap: wrap; gap: 12px;">
+                            <label style="font-size: 0.9rem;">
+                                <input type="checkbox" name="target_years[]" value="1st"> 1st Year
+                            </label>
+                            <label style="font-size: 0.9rem;">
+                                <input type="checkbox" name="target_years[]" value="2nd"> 2nd Year
+                            </label>
+                            <label style="font-size: 0.9rem;">
+                                <input type="checkbox" name="target_years[]" value="3rd"> 3rd Year
+                            </label>
+                            <label style="font-size: 0.9rem;">
+                                <input type="checkbox" name="target_years[]" value="4th"> 4th Year
+                            </label>
+                        </div>
+                        <p style="margin-top: 6px; font-size: 0.8rem; color: var(--text-muted);">
+                            Leave all unchecked to send this hackathon to all years.
+                        </p>
+                    </div>
 
                     <!-- Submit -->
                     <div style="margin-top: 40px; text-align: center;">

@@ -35,14 +35,10 @@
                         <i class="fas fa-th-large"></i> Dashboard
                     </a>
                 </li>
+                
                 <li>
-                    <a href="{{ url_for('events.create_event') }}" class="active">
-                        <i class="fas fa-calendar-plus"></i> Manage Events
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url_for('events.view_registrations') }}">
-                        <i class="fas fa-list-alt"></i> Registrations
+                    <a href="{{ url_for('club.post_announcement_page') }}">
+                        <i class="fas fa-bullhorn"></i> Post Announcement
                     </a>
                 </li>
                 <li>
@@ -85,12 +81,11 @@
                             <p style="margin: 5px 0;"><i class="fas fa-map-marker-alt" style="width: 20px;"></i> {{ event.mode }} {% if event.venue %}({{ event.venue }}){% endif %}</p>
                         </div>
                         <div style="display: flex; gap: 10px; margin-top: 15px;">
-                            <a href="{{ url_for('events.view_registrations', event_id=event.id) }}" class="btn-primary" style="text-decoration: none;">
-                                <i class="fas fa-list-ul"></i> View Registrations
-                            </a>
-                            <a href="{{ url_for('events.download_registrations', event_id=event.id) }}" class="btn-primary" style="text-decoration: none; background: white; color: var(--primary-color); border: 1px solid var(--primary-color);">
-                                <i class="fas fa-file-csv"></i> Export CSV
-                            </a>
+                            {% if event.external_registration_link %}
+                                <a href="{{ event.external_registration_link }}" target="_blank" class="btn-primary" style="text-decoration: none;">
+                                    <i class="fas fa-external-link-alt"></i> Registration Link
+                                </a>
+                            {% endif %}
                         </div>
                     </div>
                     {% endfor %}

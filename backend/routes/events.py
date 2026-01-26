@@ -5,6 +5,9 @@ import csv
 from datetime import datetime
 from werkzeug.utils import secure_filename
 import json
+from dotenv import load_dotenv
+
+load_dotenv()
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg', 'gif', 'pdf'}
@@ -15,7 +18,8 @@ def is_college_email(email: str) -> bool:
         if "@" not in e:
             return False
         domain = e.split("@")[-1]
-        allowed_domains = {"anurag.edu.in"}
+        allowed_domains_str = os.getenv("ALLOWED_DOMAINS", "anurag.edu.in")
+        allowed_domains = {d.strip() for d in allowed_domains_str.split(",")}
         return domain in allowed_domains
     except Exception:
         return False
@@ -48,6 +52,17 @@ except Exception:
     pass
 
 # ================================
+# LIST ALL EVENTS (PUBLIC)
+# ================================
+@events_bp.route('/events')
+def events():
+    cursor = db.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM events ORDER BY created_at DESC")
+    events = cursor.fetchall()
+    cursor.close()
+    return render_template('events.html', events=events)
+
+# ================================
 # STUDENT REGISTRATION
 # ================================
 @events_bp.route('/register/<int:event_id>')
@@ -64,105 +79,54 @@ def open_registration_form(event_id):
 
     if not event:
         flash("Event not found", "danger")
-        return redirect(url_for('student_dashboard'))
+        return redirect(url_for('student.dashboard'))
+
+    if event.get('external_registration_link'):
+        return redirect(event['external_registration_link'])
+    else:
+        flash("This event uses external registration. Link unavailable.", "warning")
+        return redirect(url_for('student.dashboard'))
 
     return render_template('hackathon_registration.html', event=event, event_id=event_id, user=user)
 
 
 @events_bp.route('/submit-registration', methods=['POST'])
 def submit_registration():
-    if 'user_id' not in session:
-        return redirect(url_for('auth.login'))
-
-    cursor = db.cursor()
-
-    event_id = request.form.get('event_id')
-    team_name = request.form.get('team_name')
-    domain = request.form.get('domain')
-    project_title = request.form.get('project_title')
-
-    lead_name = request.form.get('lead_name')
-    lead_email = request.form.get('lead_email')
-    lead_phone = request.form.get('lead_phone')
-    lead_year = request.form.get('lead_year')
-    lead_branch = request.form.get('lead_branch')
-    lead_section = request.form.get('lead_section')
-
-    # Basic validation (Team Name/Project Title might be optional for some events)
-    if not all([lead_name, lead_email, lead_phone]):
-        flash("Please fill all required personal details", "danger")
-        return redirect(url_for('events.open_registration_form', event_id=event_id))
-
-    if not is_college_email(lead_email):
-        flash("Please use your college email address for registration.", "warning")
-        return redirect(url_for('events.open_registration_form', event_id=event_id))
-
-    payment_file = request.files.get('payment_screenshot')
-    filename = None
-
-    if payment_file and payment_file.filename:
-        upload_folder = "static/uploads"
-        os.makedirs(upload_folder, exist_ok=True)
-        filename = payment_file.filename
-        payment_file.save(os.path.join(upload_folder, filename))
-
-    # Insert registration
-    cursor.execute("""
-        INSERT INTO event_registrations
-        (event_id, team_name, domain, project_title,
-         team_lead_name, team_lead_email, team_lead_phone,
-         team_lead_year, team_lead_branch, team_lead_section, payment_screenshot)
-        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-    """, (
-        event_id, team_name, domain, project_title,
-        lead_name, lead_email, lead_phone,
-        lead_year, lead_branch, lead_section, filename
-    ))
-
-    registration_id = cursor.lastrowid
-
-    # Insert team members
-    member_names = request.form.getlist('member_name[]')
-    member_emails = request.form.getlist('member_email[]')
-    member_years = request.form.getlist('member_year[]')
-    member_branches = request.form.getlist('member_branch[]')
-    member_sections = request.form.getlist('member_section[]')
-
-    for i in range(len(member_names)):
-        if member_names[i].strip():
-            # Ensure lists are long enough (handle potential index errors if form is inconsistent)
-            m_year = member_years[i] if i < len(member_years) else None
-            m_branch = member_branches[i] if i < len(member_branches) else None
-            m_section = member_sections[i] if i < len(member_sections) else None
-            m_email = member_emails[i] if i < len(member_emails) else None
-            if m_email and not is_college_email(m_email):
-                flash("Team member emails must be college email addresses.", "warning")
-                cursor.close()
-                return redirect(url_for('events.open_registration_form', event_id=event_id))
-
-            cursor.execute("""
-                INSERT INTO event_team_members
-                (registration_id, member_name, member_email, year, branch, section)
-                VALUES (%s,%s,%s,%s,%s,%s)
-            """, (
-                registration_id,
-                member_names[i],
-                member_emails[i],
-                m_year,
-                m_branch,
-                m_section
-            ))
-
-    db.commit()
-    cursor.close()
-
-    flash("🎉 Registration successful!", "success")
+    flash("On-platform registrations are disabled. Please use the external link.", "warning")
     return redirect(url_for('student.dashboard'))
 
 
 # ================================
 # QUESTIONS / DOUBTS (STUDENTS)
 # ================================
+@events_bp.route('/event/<int:event_id>/questions')
+def event_questions(event_id):
+    cursor = db.cursor(dictionary=True)
+    try:
+        cursor.execute("SELECT * FROM events WHERE id = %s", (event_id,))
+        event = cursor.fetchone()
+        if not event:
+            flash("Event not found", "danger")
+            return redirect(url_for('student.dashboard'))
+        cursor.execute("""
+            SELECT id, student_email, question, answer, status, created_at, answered_at
+            FROM event_questions
+            WHERE event_id = %s
+            ORDER BY created_at DESC
+        """, (event_id,))
+        questions = cursor.fetchall()
+        user = None
+        if 'user_id' in session:
+            cursor.execute("SELECT * FROM users WHERE id = %s", (session['user_id'],))
+            user = cursor.fetchone()
+    except Exception as e:
+        print(f"Error loading event questions: {e}")
+        flash("Error loading questions for this event.", "danger")
+        return redirect(url_for('student.dashboard'))
+    finally:
+        cursor.close()
+    return render_template('event_questions.html', event=event, questions=questions, user=user)
+
 @events_bp.route('/submit-question', methods=['POST'])
 def submit_question():
     if 'user_id' not in session:
@@ -173,7 +137,11 @@ def submit_question():
 
     if not question or not event_id:
         flash('Please enter your question.', 'danger')
-        return redirect(url_for('student_dashboard'))
+        try:
+            eid = int(event_id)
+            return redirect(url_for('events.event_questions', event_id=eid))
+        except Exception:
+            return redirect(url_for('student.dashboard'))
 
     # get student email
     cursor = db.cursor()
@@ -188,7 +156,7 @@ def submit_question():
     cursor.close()
 
     flash('Question submitted!', 'success')
-    return redirect(url_for('student_dashboard'))
+    return redirect(url_for('events.event_questions', event_id=int(event_id)))
 
 
 # ================================
@@ -208,29 +176,42 @@ def create_hackathon():
         deadline = request.form.get('deadline')
         mode = request.form.get('mode')
         venue = request.form.get('venue')
-        
-        # Hackathon specific
+
         min_team_size = request.form.get('min_team_size', 1)
         max_team_size = request.form.get('max_team_size', 4)
-        registration_fee = request.form.get('registration_fee', 0)
-        
-        girls_discount_enabled = 1 if request.form.get('girls_discount_enabled') else 0
-        girls_team_discount = request.form.get('girls_team_discount', 0)
 
         domains = ",".join(request.form.getlist('domains[]')) if request.form.getlist('domains[]') else None
+
+        poster_file = request.files.get('poster')
+        poster_path = None
+        if poster_file and poster_file.filename and allowed_file(poster_file.filename):
+            filename = secure_filename(f"hackathon_{session['user_id']}_{int(datetime.now().timestamp())}_{poster_file.filename}")
+            dest_folder = os.path.join(UPLOAD_FOLDER, 'hackathons')
+            os.makedirs(dest_folder, exist_ok=True)
+            poster_file.save(os.path.join(dest_folder, filename))
+            poster_path = os.path.join('uploads', 'hackathons', filename).replace("\\", "/")
+
+        external_registration_link = request.form.get('external_registration_link') or None
+        if external_registration_link:
+            external_registration_link = external_registration_link.strip()
+            if external_registration_link == "":
+                external_registration_link = None
+
+        target_years_list = request.form.getlist('target_years[]')
+        target_years = ",".join(target_years_list) if target_years_list else None
 
         cursor = db.cursor()
         try:
             cursor.execute("""
                 INSERT INTO events
-                (title, event_type, description, event_date, deadline, mode, venue, 
-                 created_by, min_team_size, max_team_size, registration_fee,
-                 girls_discount_enabled, girls_team_discount, domains)
+                (title, event_type, description, event_date, deadline, mode, venue,
+                 created_by, min_team_size, max_team_size, domains, poster_path,
+                 external_registration_link, target_years)
                 VALUES (%s, 'hackathon', %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (
                 title, description, event_date, deadline, mode, venue,
-                session['user_id'], min_team_size, max_team_size, registration_fee,
-                girls_discount_enabled, girls_team_discount, domains
+                session['user_id'], min_team_size, max_team_size, domains, poster_path,
+                external_registration_link, target_years
             ))
             db.commit()
             flash("✅ Hackathon created successfully!", "success")
@@ -270,7 +251,7 @@ def edit_question(qid):
     if not q or q.get('student_email') != student_email:
         cursor.close()
         flash('You are not allowed to edit this question.', 'danger')
-        return redirect(url_for('student_dashboard'))
+        return redirect(url_for('student.dashboard'))
 
     if request.method == 'POST':
         new_q = request.form.get('question')
@@ -291,7 +272,7 @@ def edit_question(qid):
         db.commit()
         cursor.close()
         flash('Question updated.', 'success')
-        return redirect(url_for('student_dashboard'))
+        return redirect(url_for('student.dashboard'))
 
     cursor.close()
     return render_template('edit_question.html', q=q, user=u)
@@ -338,7 +319,7 @@ def answer_question(qid):
         answer = request.form.get('answer')
         if not answer:
             flash('Please provide an answer.', 'danger')
-            return redirect(url_for('events.answer_question', qid=qid))
+            return redirect(url_for('club.answer_question', qid=qid))
 
         cursor.execute(
             "UPDATE event_questions SET answer=%s, answered_by=%s, status='answered', answered_at=%s WHERE id=%s",
@@ -363,73 +344,8 @@ def create_event():
     if 'user_id' not in session or session.get('role') != 'club':
         flash("Unauthorized access", "danger")
         return redirect(url_for('auth.login'))
-
-    cursor = db.cursor(dictionary=True)
-
-    if request.method == 'POST':
-        title = request.form.get('title')
-        event_type = request.form.get('event_type')
-        description = request.form.get('description')
-        event_date = request.form.get('event_date')
-        deadline = request.form.get('deadline')
-        mode = request.form.get('mode')
-        venue = request.form.get('venue')
-        organizer = request.form.get('organizer') or request.form.get('club_name')
-        
-        # Default values if not provided
-        organising_department = request.form.get('organising_department')
-        domains = ",".join(request.form.getlist('domains[]')) if request.form.getlist('domains[]') else None
-
-        # 🔍 CHECK DUPLICATE EVENT
-        cursor.execute("""
-            SELECT id FROM events
-            WHERE title = %s
-              AND created_by = %s
-              AND deadline = %s
-        """, (title, session['user_id'], deadline))
-
-        existing_event = cursor.fetchone()
-
-        if existing_event:
-            flash("⚠️ This event already exists!", "warning")
-            cursor.close()
-            return redirect(url_for('events.create_event'))
-
-        # ✅ INSERT
-        try:
-            cursor.execute("""
-                INSERT INTO events
-                (title, event_type, description, event_date, deadline, mode, venue, organizer, 
-                 domains, organising_department, created_by)
-                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-            """, (
-                title, event_type, description, event_date, deadline, mode, venue, organizer,
-                domains, organising_department, session['user_id']
-            ))
-            db.commit()
-            flash("✅ Event created successfully!", "success")
-        except Exception as e:
-            db.rollback()
-            print(f"Error creating event: {e}")
-            flash("Error creating event. Please try again.", "danger")
-        
-        cursor.close()
-        return redirect(url_for('events.create_event'))
-
-    # GET: Fetch all events created by this club
-    cursor.execute("""
-        SELECT * FROM events 
-        WHERE created_by = %s 
-        ORDER BY created_at DESC
-    """, (session['user_id'],))
-    events = cursor.fetchall()
-
-    cursor.execute("SELECT * FROM users WHERE id = %s", (session['user_id'],))
-    user = cursor.fetchone()
-
-    cursor.close()
-
-    return render_template('create_event.html', events=events, user=user)
+    flash("Manage Events is disabled. Use Post Announcement instead.", "warning")
+    return redirect(url_for('club.post_announcement_page'))
 
 
 # ================================

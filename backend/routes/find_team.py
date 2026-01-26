@@ -25,6 +25,7 @@ def find_team():
         name = request.form['name']
         event_id = request.form['event_id']
         domain = request.form['domain']
+        required_skills = request.form.get('required_skills', '')
         branch = request.form['branch']
         year = request.form['year']
         required_size = int(request.form['required_size'])
@@ -38,15 +39,15 @@ def find_team():
         if existing:
             cursor.execute("""
                 UPDATE team_requests
-                SET name=%s, domain=%s, branch=%s, year=%s, required_size=%s
+                SET name=%s, domain=%s, required_skills=%s, branch=%s, year=%s, required_size=%s
                 WHERE email=%s AND event_id=%s
-            """, (name, domain, branch, year, required_size, user_email, event_id))
+            """, (name, domain, required_skills, branch, year, required_size, user_email, event_id))
         else:
             cursor.execute("""
                 INSERT INTO team_requests
-                (name, email, event_id, domain, branch, year, required_size)
-                VALUES (%s,%s,%s,%s,%s,%s,%s)
-            """, (name, user_email, event_id, domain, branch, year, required_size))
+                (name, email, event_id, domain, required_skills, branch, year, required_size)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
+            """, (name, user_email, event_id, domain, required_skills, branch, year, required_size))
 
         db.commit()
         cursor.close()
@@ -58,13 +59,70 @@ def find_team():
     cursor.execute("SELECT id, title FROM events")
     events = cursor.fetchall()
 
-    cursor.execute("""
+    # Build like-minded filter based on student's skills/interests and profile
+    skills_str = str(user.get('skills') or '')
+    interests_str = str(user.get('interests') or '')
+    raw_terms = [t.strip().lower() for t in (skills_str.split(',') + interests_str.split(',')) if t.strip()]
+    # Year normalization similar to student dashboard
+    user_year_raw = (user.get('year') or "").strip().lower()
+    def _norm_year(y):
+        y = y.replace("year", "").strip()
+        mapping = {
+            "1": "1st", "i": "1st", "first": "1st", "1st": "1st",
+            "2": "2nd", "ii": "2nd", "second": "2nd", "2nd": "2nd",
+            "3": "3rd", "iii": "3rd", "third": "3rd", "3rd": "3rd",
+            "4": "4th", "iv": "4th", "fourth": "4th", "4th": "4th"
+        }
+        return mapping.get(y, y)
+    user_year_norm = _norm_year(user_year_raw).lower() if user_year_raw else ""
+    user_branch = (user.get('branch') or "").strip()
+
+    base_sql = """
         SELECT tr.*, e.title AS event_title
         FROM team_requests tr
         JOIN events e ON tr.event_id = e.id
-        WHERE tr.email != %s
-        ORDER BY tr.id DESC
-    """, (user_email,))
+        WHERE tr.email != %s AND tr.required_size > 0
+    """
+    params = [user_email]
+
+    like_parts = []
+    for term in raw_terms:
+        like_parts.append("LOWER(tr.domain) LIKE %s")
+        params.append(f"%{term}%")
+
+    skill_parts = []
+    for term in raw_terms:
+        skill_parts.append("LOWER(tr.required_skills) LIKE %s")
+        params.append(f"%{term}%")
+
+    profile_match = []
+    if user_branch and user_year_norm:
+        profile_match.append("(tr.branch = %s AND LOWER(tr.year) = %s)")
+        params.extend([user_branch, user_year_norm])
+    elif user_branch:
+        profile_match.append("(tr.branch = %s)")
+        params.append(user_branch)
+    elif user_year_norm:
+        profile_match.append("(LOWER(tr.year) = %s)")
+        params.append(user_year_norm)
+
+    combined_filters = []
+    if like_parts:
+        combined_filters.append("(" + " OR ".join(like_parts) + ")")
+    if profile_match:
+        combined_filters.append("(" + " OR ".join(profile_match) + ")")
+    if skill_parts:
+        combined_filters.append("(tr.required_skills IS NULL OR tr.required_skills = '' OR (" + " OR ".join(skill_parts) + "))")
+
+    if combined_filters:
+        base_sql += " AND (" + " OR ".join(combined_filters) + ")"
+    else:
+        # No profile signals; avoid showing all requests
+        base_sql += " AND 1=0"
+        flash("Fill your skills/interests or profile (branch/year) to view like-minded team requests.", "warning")
+
+    base_sql += " ORDER BY tr.id DESC"
+    cursor.execute(base_sql, tuple(params))
     requests = cursor.fetchall()
 
     cursor.close()
@@ -93,6 +151,10 @@ def join_team(request_id):
         WHERE tr.id=%s
     """, (request_id,))
     team_request = cursor.fetchone()
+
+    if team_request and team_request.get('required_size', 0) <= 0:
+        cursor.close()
+        return redirect(url_for('find_team.find_team'))
 
     # Prevent joining own team
     if not team_request or team_request['email'] == user_email:

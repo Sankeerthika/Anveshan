@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Active Hackathons | Anveshan</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/unstop_theme.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <a href="{{ url_for('club.club_dashboard') }}" class="logo-container">
+                    <div class="logo-icon">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <span class="logo-text">Anveshan</span>
+                </a>
+            </div>
+            <div class="user-profile-sidebar">
+                <div style="width: 80px; height: 80px; background: #e0e0e0; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px auto; color: #666; font-size: 30px;">
+                    <i class="fas fa-users"></i>
+                </div>
+                <h4 style="margin: 0; font-size: 1.1rem;">{{ club.name if club else 'Club Admin' }}</h4>
+                <p style="color: #666; font-size: 0.85rem;">Organizer</p>
+            </div>
+            <ul class="sidebar-menu">
+                <li>
+                    <a href="{{ url_for('club.club_dashboard') }}" class="active">
+                        <i class="fas fa-th-large"></i> Dashboard
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('club.post_announcement_page') }}">
+                        <i class="fas fa-bullhorn"></i> Post Announcement
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('auth.logout') }}">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="main-content">
+            <div style="margin-bottom: 24px; display: flex; align-items: center;">
+                <button class="toggle-sidebar-btn" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div style="margin-left: 12px;">
+                    <h2 style="margin: 0;">Edit Active Hackathons</h2>
+                    <p style="color: var(--text-muted); margin: 0;">Select a hackathon to update details</p>
+                </div>
+                <a href="{{ url_for('club.club_dashboard') }}" class="btn-primary" style="margin-left: auto; text-decoration: none;">Back to Dashboard</a>
+            </div>
+
+            {% if events and events|length > 0 %}
+            <div class="card" style="max-width: 900px; margin: 0 auto;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
+                    {% for e in events %}
+                    <div class="card" style="margin-bottom: 0;">
+                        <span style="display: inline-block; padding: 5px 12px; border-radius: 15px; background: #e6f0ff; color: var(--primary-color); font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 15px;">{{ e.event_type }}</span>
+                        <h3 style="margin: 0 0 10px 0; font-size: 1.2rem;">{{ e.title }}</h3>
+                        {% if e.deadline %}
+                        <p style="margin: 5px 0; font-size: 0.9rem; color: var(--text-muted);"><i class="fas fa-clock" style="width: 20px;"></i> Registration Ends: {{ e.deadline }}</p>
+                        {% endif %}
+                        <a href="{{ url_for('club.edit_announcement', event_id=e.id) }}" class="btn-apply" style="width: auto; padding: 8px 16px;">Edit</a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% else %}
+            <div class="card" style="text-align: center; padding: 30px;">
+                <i class="far fa-calendar-times fa-3x" style="color: #ccc; margin-bottom: 20px;"></i>
+                <p style="color: #666;">No active hackathons to edit.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const container = document.querySelector('.dashboard-container');
+            sidebar.classList.toggle('collapsed');
+            container.classList.toggle('sidebar-collapsed');
+            const isCollapsed = sidebar.classList.contains('collapsed');
+            localStorage.setItem('sidebarCollapsed', isCollapsed);
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            if (isCollapsed) {
+                document.getElementById('sidebar').classList.add('collapsed');
+                document.querySelector('.dashboard-container').classList.add('sidebar-collapsed');
+            }
+        });
+    </script>
+</body>
+</html>

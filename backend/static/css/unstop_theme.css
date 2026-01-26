@@ -439,3 +439,12 @@ body {
     justify-content: center;
     color: white;
 }
+
+/* Small user avatar used in sidebars and headers */
+.user-avatar-small {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: inline-block;
+}

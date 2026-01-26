@@ -1,13 +1,20 @@
 import mysql.connector
+import os
+from dotenv import load_dotenv
+
+# Load .env from backend directory as verify_schema.py is in root but uses backend config
+load_dotenv(os.path.join(os.path.dirname(__file__), 'backend', '.env'))
+# Also try root .env
+load_dotenv()
 
 def check_schema():
     try:
         conn = mysql.connector.connect(
-            host="localhost",
-            user="root",
-            password="",
-            database="anveshan",
-            port=3306
+            host=os.getenv("DB_HOST", "localhost"),
+            user=os.getenv("DB_USER", "root"),
+            password=os.getenv("DB_PASSWORD", ""),
+            database=os.getenv("DB_NAME", "anveshan"),
+            port=int(os.getenv("DB_PORT", 3306))
         )
         cursor = conn.cursor()
         

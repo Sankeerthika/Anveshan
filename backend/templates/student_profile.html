@@ -13,13 +13,13 @@
             <div class="sidebar-header">
                 <a href="{{ url_for('student.dashboard') }}" class="logo-container">
                     <div class="logo-icon">
-                        <i class="fas fa-search"></i>
+                        <i class="fas fa-rocket"></i>
                     </div>
                     <span class="logo-text">Anveshan</span>
                 </a>
             </div>
             <div class="user-profile-sidebar">
-                <img id="avatar-preview" src="{{ url_for('static', filename='uploads/profile_pics/' + (user.profile_photo if user.profile_photo else 'default.png')) }}"
+                <img id="avatar-preview-small" src="{{ url_for('static', filename='uploads/profile_pics/' + (user.profile_photo if user.profile_photo else 'default.png')) }}"
                      alt="Profile" class="user-avatar-small"
                      onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><rect width=%27100%27 height=%27100%27 fill=%27%23e0e0e0%27/><text x=%2750%27 y=%2755%27 font-size=%2712%27 text-anchor=%27middle%27 fill=%27%23666%27>Avatar</text></svg>'">
                 <h4 style="margin: 0; font-size: 1.1rem;">{{ user.name or 'Student' }}</h4>
@@ -59,20 +59,43 @@
             </ul>
         </div>
         <div class="main-content">
-            <div class="header" style="margin-bottom: 30px; display: flex; align-items: center;">
-                <button class="toggle-sidebar-btn" onclick="toggleSidebar()">
+            <div style="margin-bottom: 24px; display: flex; align-items: center;">
+                <button class="toggle-sidebar-btn" onclick="toggleSidebar()" style="border:none; background:#eef3ff; color: var(--primary-color); width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center;">
                     <i class="fas fa-bars"></i>
                 </button>
-                <div style="margin-left: 15px;">
+                <div style="margin-left: 12px;">
                     <h2 style="margin: 0;">My Profile</h2>
-                    <p style="color: var(--text-muted); margin: 0;">Update your personal information.</p>
+                    <p style="color: var(--text-muted); margin: 0;">Manage your personal information and links</p>
                 </div>
             </div>
 
-            <div class="card" style="max-width: 900px; margin: 0 auto;">
-                <h3 class="card-title">Profile Details</h3>
-                <form method="POST" enctype="multipart/form-data">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="card" style="padding:12px; margin-bottom:12px; border-left:4px solid {% if category=='success' %}#28a745{% elif category=='danger' %}#dc3545{% else %}#1C4980{% endif %};">
+                            <div style="color: var(--text-color);">{{ message }}</div>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <div class="card" style="padding: 20px; margin-bottom: 20px; display:flex; align-items:center; gap:16px;">
+                <img id="avatar-preview" src="{{ url_for('static', filename='uploads/profile_pics/' + (user.profile_photo if user.profile_photo else 'default.png')) }}"
+                     alt="Profile" style="width:84px; height:84px; border-radius:16px; object-fit:cover;"
+                     onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><rect width=%27100%27 height=%27100%27 fill=%27%23e0e0e0%27/></svg>'">
+                <div>
+                    <div style="font-weight:800; font-size:1.2rem;">{{ user.name or 'Student' }}</div>
+                    <div style="color: var(--text-muted); font-size:0.9rem;">{{ user.role|title }}</div>
+                    <label for="profile_photo" class="btn-apply" style="margin-top:8px; cursor:pointer; display:inline-block;">Change Photo</label>
+                </div>
+            </div>
+
+            <form method="POST" enctype="multipart/form-data">
+                <input type="file" id="profile_photo" name="profile_photo" class="form-control" accept="image/*" style="display:none;" onchange="previewImage(this)">
+
+                <div class="card" style="padding: 20px;">
+                    <h3 class="card-title" style="margin-bottom:12px;">Basic Info</h3>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:14px;">
                         <div class="form-group">
                             <label for="name">Name</label>
                             <input type="text" id="name" name="name" class="form-control" value="{{ user.name or '' }}">
@@ -93,6 +116,12 @@
                             <label for="bio">Bio</label>
                             <textarea id="bio" name="bio" rows="3" class="form-control" placeholder="Short introduction...">{{ user.bio or '' }}</textarea>
                         </div>
+                    </div>
+                </div>
+
+                <div class="card" style="padding: 20px; margin-top: 16px;">
+                    <h3 class="card-title" style="margin-bottom:12px;">Skills & Interests</h3>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:14px;">
                         <div class="form-group" style="grid-column: span 2;">
                             <label for="skills">Skills</label>
                             <input type="text" id="skills" name="skills" class="form-control" value="{{ user.skills or '' }}" placeholder="e.g. Python, React, ML">
@@ -101,6 +130,12 @@
                             <label for="interests">Interests</label>
                             <input type="text" id="interests" name="interests" class="form-control" value="{{ user.interests or '' }}" placeholder="e.g. AI, Web Dev, Cybersecurity, Research">
                         </div>
+                    </div>
+                </div>
+
+                <div class="card" style="padding: 20px; margin-top: 16px;">
+                    <h3 class="card-title" style="margin-bottom:12px;">Links</h3>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:14px;">
                         <div class="form-group">
                             <label for="linkedin_url">LinkedIn</label>
                             <input type="url" id="linkedin_url" name="linkedin_url" class="form-control" value="{{ user.linkedin_url or '' }}" placeholder="https://linkedin.com/in/...">
@@ -117,14 +152,13 @@
                             <label for="medium_url">Medium / Blog</label>
                             <input type="url" id="medium_url" name="medium_url" class="form-control" value="{{ user.medium_url or '' }}" placeholder="https://medium.com/@...">
                         </div>
-                        <div class="form-group" style="grid-column: span 2;">
-                            <label for="profile_photo">Profile Photo</label>
-                            <input type="file" id="profile_photo" name="profile_photo" class="form-control" accept="image/*" onchange="previewImage(this)">
-                        </div>
                     </div>
-                    <button type="submit" class="btn-primary" style="margin-top: 20px;">Save Changes</button>
-                </form>
-            </div>
+                </div>
+
+                <div style="display:flex; justify-content:flex-end; gap:10px; margin-top: 16px;">
+                    <button type="submit" class="btn-apply" style="padding: 12px 20px;">Save Changes</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -148,7 +182,10 @@
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    document.getElementById('avatar-preview').src = e.target.result;
+                    const big = document.getElementById('avatar-preview');
+                    const small = document.getElementById('avatar-preview-small');
+                    if (big) big.src = e.target.result;
+                    if (small) small.src = e.target.result;
                 };
                 reader.readAsDataURL(input.files[0]);
             }

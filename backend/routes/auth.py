@@ -7,6 +7,12 @@ import random
 import smtplib
 import ssl
 from datetime import datetime, timedelta
+from werkzeug.security import generate_password_hash, check_password_hash
+from dotenv import load_dotenv
+from utils.email_sender import send_email, smtp_missing_keys
+from utils.env_manager import update_env_file
+
+load_dotenv()
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -16,100 +22,17 @@ def is_college_email(email: str) -> bool:
         if "@" not in e:
             return False
         domain = e.split("@")[-1]
-        allowed_domains = {"anurag.edu.in"}
+        allowed_domains_str = os.getenv("ALLOWED_DOMAINS", "anurag.edu.in")
+        allowed_domains = {d.strip() for d in allowed_domains_str.split(",")}
         return domain in allowed_domains
     except Exception:
         return False
-try:
-    c = db.cursor()
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS otp_codes (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            email VARCHAR(255) NOT NULL,
-            code_hash VARCHAR(255) NOT NULL,
-            purpose ENUM('password_reset','registration') NOT NULL,
-            expires_at DATETIME NOT NULL,
-            used TINYINT(1) DEFAULT 0,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-    """)
-    db.commit()
-    c.close()
-except Exception:
-    pass
+
 def generate_otp():
     return f"{random.randint(100000, 999999)}"
 def hash_otp(email, code):
     return hashlib.sha256((email.lower().strip() + ":" + code).encode()).hexdigest()
-def send_email(to_email, subject, body):
-    host = current_app.config.get("SMTP_HOST")
-    port = int(current_app.config.get("SMTP_PORT") or 587)
-    username = current_app.config.get("SMTP_USER")
-    password = current_app.config.get("SMTP_PASSWORD")
-    use_tls = bool(current_app.config.get("SMTP_TLS", True))
-    if not host or not username or not password:
-        try:
-            root_env = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.env'))
-            if os.path.isfile(root_env):
-                with open(root_env, 'r', encoding='utf-8') as f:
-                    for line in f:
-                        line = line.strip()
-                        if not line or line.startswith('#') or '=' not in line:
-                            continue
-                        k, v = line.split('=', 1)
-                        k = k.strip()
-                        v = v.strip().strip('"').strip("'")
-                        if k and v:
-                            os.environ[k] = v
-                # update config after reading .env
-                current_app.config.update({
-                    "SMTP_HOST": os.environ.get("SMTP_HOST"),
-                    "SMTP_PORT": int(os.environ.get("SMTP_PORT") or port),
-                    "SMTP_USER": os.environ.get("SMTP_USER"),
-                    "SMTP_PASSWORD": os.environ.get("SMTP_PASSWORD"),
-                    "SMTP_TLS": str(os.environ.get("SMTP_TLS", "true")).lower() in ("1", "true", "yes", "on"),
-                })
-                host = current_app.config.get("SMTP_HOST")
-                username = current_app.config.get("SMTP_USER")
-                password = current_app.config.get("SMTP_PASSWORD")
-                use_tls = bool(current_app.config.get("SMTP_TLS", True))
-                port = int(current_app.config.get("SMTP_PORT") or 587)
-        except Exception:
-            pass
-    if not host or not username or not password:
-        try:
-            current_app.logger.info("Email to %s subject=%s body=%s", to_email, subject, body)
-        except Exception:
-            pass
-        return False
-    try:
-        message = f"From: {username}\r\nTo: {to_email}\r\nSubject: {subject}\r\n\r\n{body}"
-        if use_tls:
-            context = ssl.create_default_context()
-            with smtplib.SMTP(host, port) as server:
-                server.starttls(context=context)
-                server.login(username, password)
-                server.sendmail(username, [to_email], message.encode("utf-8"))
-        else:
-            with smtplib.SMTP(host, port) as server:
-                server.login(username, password)
-                server.sendmail(username, [to_email], message.encode("utf-8"))
-        return True
-    except Exception:
-        try:
-            current_app.logger.warning("SMTP failed; email not sent to %s", to_email)
-        except Exception:
-            pass
-        return False
-def smtp_missing_keys():
-    missing = []
-    if not current_app.config.get("SMTP_HOST"):
-        missing.append("SMTP_HOST")
-    if not current_app.config.get("SMTP_USER"):
-        missing.append("SMTP_USER")
-    if not current_app.config.get("SMTP_PASSWORD"):
-        missing.append("SMTP_PASSWORD")
-    return missing
+
 # ------------------- LOGIN -------------------
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
@@ -133,13 +56,29 @@ def login():
 
         cursor = db.cursor(dictionary=True)
         cursor.execute(
-            "SELECT * FROM users WHERE email=%s AND password=%s",
-            (email, password)
+            "SELECT * FROM users WHERE email=%s",
+            (email,)
         )
         user = cursor.fetchone()
+        
+        # Verify password (hash or legacy plaintext)
+        authenticated = False
+        if user:
+            stored_password = user['password']
+            # Check if it's a hash (Werkzeug hashes usually start with 'scrypt:' or 'pbkdf2:')
+            if stored_password.startswith(('scrypt:', 'pbkdf2:')):
+                if check_password_hash(stored_password, password):
+                    authenticated = True
+            elif stored_password == password:
+                # Legacy plaintext match -> Upgrade to hash
+                new_hash = generate_password_hash(password)
+                cursor.execute("UPDATE users SET password=%s WHERE id=%s", (new_hash, user['id']))
+                db.commit()
+                authenticated = True
+        
         cursor.close()
 
-        if user:
+        if authenticated:
             # 🔑 STORE EVERYTHING NEEDED
             session.clear()
             session.permanent = True
@@ -168,7 +107,6 @@ def register():
         name = request.form.get('name', '').strip()
         email = request.form.get('email', '').strip()
         password = request.form.get('password', '').strip()
-        otp = request.form.get('otp', '').strip()
         role = request.form.get('role', 'student')
         allowed_roles = {'student', 'club', 'faculty'}
         if role not in allowed_roles:
@@ -181,28 +119,14 @@ def register():
         if role in {'student', 'faculty'} and not is_college_email(email):
             flash("Please register using your college email address (e.g., name@college.ac.in or name@college.edu).", "warning")
             return redirect(url_for('auth.register'))
-        if not otp:
-            flash("Enter the OTP sent to your email.", "warning")
-            return redirect(url_for('auth.register'))
-        cursor = db.cursor(dictionary=True)
-        cursor.execute("""
-            SELECT id, expires_at, used FROM otp_codes
-            WHERE email=%s AND purpose='registration' AND code_hash=%s
-            ORDER BY id DESC LIMIT 1
-        """, (email, hash_otp(email, otp)))
-        row = cursor.fetchone()
-        if not row or row['used'] == 1 or row['expires_at'] < datetime.now():
-            cursor.close()
-            flash("Invalid or expired OTP.", "danger")
-            return redirect(url_for('auth.register'))
 
         cursor2 = db.cursor()
         try:
+            hashed_password = generate_password_hash(password)
             cursor2.execute(
                 "INSERT INTO users (name, email, password, role) VALUES (%s, %s, %s, %s)",
-                (name, email, password, role)
+                (name, email, hashed_password, role)
             )
-            cursor.execute("UPDATE otp_codes SET used=1 WHERE id=%s", (row['id'],))
             db.commit()
             flash("Registration successful! Please login.", "success")
             return redirect(url_for('auth.login'))
@@ -216,10 +140,6 @@ def register():
 
         finally:
             cursor2.close()
-            try:
-                cursor.close()
-            except Exception:
-                pass
 
     return render_template('register.html')
 
@@ -242,11 +162,11 @@ def request_registration_otp():
     sent = send_email(email, "Your Anveshan Registration OTP", f"Your OTP is {code}. It expires in 10 minutes.")
     if sent:
         flash("OTP sent to your email.", "info")
-        return redirect(url_for('auth.register'))
     else:
-        mk = ", ".join(smtp_missing_keys()) or "SMTP config"
-        flash(f"Email service not configured. Missing: {mk}", "danger")
-        return redirect(url_for('auth.smtp_config'))
+        # Don't expose config errors to user, just generic error
+        flash("Unable to send email. Please try again later or contact support.", "danger")
+        current_app.logger.error("Failed to send registration OTP to %s. Check SMTP config.", email)
+    return redirect(url_for('auth.register'))
 
 @auth_bp.route('/forgot-password', methods=['GET', 'POST'])
 def forgot_password():
@@ -260,6 +180,7 @@ def forgot_password():
         exists = c.fetchone()
         if not exists:
             c.close()
+            # Security: Don't reveal if account exists, but for now we do to be helpful
             flash("No account found for this email.", "danger")
             return redirect(url_for('auth.forgot_password'))
         code = generate_otp()
@@ -276,9 +197,9 @@ def forgot_password():
             flash("OTP sent to your email.", "info")
             return redirect(url_for('auth.reset_password', email=email))
         else:
-            mk = ", ".join(smtp_missing_keys()) or "SMTP config"
-            flash(f"Email service not configured. Missing: {mk}", "danger")
-            return redirect(url_for('auth.smtp_config'))
+            flash("Unable to send email. Please try again later.", "danger")
+            current_app.logger.error("Failed to send password reset OTP to %s. Check SMTP config.", email)
+            return redirect(url_for('auth.forgot_password'))
     return render_template('forgot_password.html')
 
 @auth_bp.route('/reset-password', methods=['GET', 'POST'])
@@ -303,7 +224,8 @@ def reset_password():
             return redirect(url_for('auth.reset_password'))
         c2 = db.cursor()
         try:
-            c2.execute("UPDATE users SET password=%s WHERE email=%s", (new_password, email))
+            hashed_password = generate_password_hash(new_password)
+            c2.execute("UPDATE users SET password=%s WHERE email=%s", (hashed_password, email))
             cursor.execute("UPDATE otp_codes SET used=1 WHERE id=%s", (row['id'],))
             db.commit()
         finally:
@@ -313,50 +235,6 @@ def reset_password():
         return redirect(url_for('auth.login'))
     email = request.args.get('email', '')
     return render_template('reset_password.html', email=email)
-
-@auth_bp.route('/smtp-config', methods=['GET', 'POST'])
-def smtp_config():
-    host = current_app.config.get("SMTP_HOST")
-    user = current_app.config.get("SMTP_USER")
-    tls = current_app.config.get("SMTP_TLS")
-    port = current_app.config.get("SMTP_PORT")
-    if request.method == 'POST':
-        new_host = request.form.get('host', '').strip()
-        new_port = request.form.get('port', '').strip() or "587"
-        new_user = request.form.get('user', '').strip()
-        new_pass = request.form.get('password', '').strip()
-        new_tls = request.form.get('tls') == 'on'
-        if not new_host or not new_user or not new_pass:
-            flash("Please fill all required fields.", "danger")
-            return redirect(url_for('auth.smtp_config'))
-        try:
-            current_app.config.update({
-                "SMTP_HOST": new_host,
-                "SMTP_PORT": int(new_port),
-                "SMTP_USER": new_user,
-                "SMTP_PASSWORD": new_pass,
-                "SMTP_TLS": new_tls,
-            })
-            root_env = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.env'))
-            with open(root_env, 'w', encoding='utf-8') as f:
-                f.write(f"SMTP_HOST={new_host}\n")
-                f.write(f"SMTP_PORT={new_port}\n")
-                f.write(f"SMTP_USER={new_user}\n")
-                f.write(f"SMTP_PASSWORD={new_pass}\n")
-                f.write(f"SMTP_TLS={'true' if new_tls else 'false'}\n")
-            test_email = request.form.get('test_email', '').strip()
-            if test_email:
-                ok = send_email(test_email, "SMTP Test (Anveshan)", "SMTP configuration works.")
-                if ok:
-                    flash("SMTP saved and test email sent.", "success")
-                else:
-                    flash("SMTP saved, but sending failed. Check credentials.", "danger")
-            else:
-                flash("SMTP settings saved.", "success")
-        except Exception as e:
-            flash("Failed to save SMTP settings.", "danger")
-        return redirect(url_for('auth.smtp_config'))
-    return render_template('smtp_config.html', host=host, user=user, tls=tls, port=port)
 
 # ------------------- LOGOUT -------------------
 @auth_bp.route('/logout')

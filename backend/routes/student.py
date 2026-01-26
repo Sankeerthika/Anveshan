@@ -15,34 +15,59 @@ def allowed_file(filename):
 
 @student_bp.route('/student-dashboard')
 def dashboard():
-    # 🔐 Auth check
     if 'user_id' not in session or session.get('role') != 'student':
         return redirect(url_for('auth.login'))
 
     cursor = db.cursor(dictionary=True)
 
+    search_query = request.args.get('q', '').strip()
+    type_filter = request.args.get('type', '').strip()
+    domain_filter = request.args.get('domain', '').strip()
+    mode_filter = request.args.get('mode', '').strip()
+    from_date_str = request.args.get('from_date', '').strip()
+    to_date_str = request.args.get('to_date', '').strip()
+
+    from_date = None
+    to_date = None
+    if from_date_str:
+        try:
+            from_date = datetime.strptime(from_date_str, "%Y-%m-%d").date()
+        except Exception:
+            from_date = None
+    if to_date_str:
+        try:
+            to_date = datetime.strptime(to_date_str, "%Y-%m-%d").date()
+        except Exception:
+            to_date = None
+
     try:
-        # ✅ Get logged-in student's details
-        cursor.execute(
-            "SELECT * FROM users WHERE id = %s",
-            (session['user_id'],)
-        )
+        cursor.execute("SELECT * FROM users WHERE id = %s", (session['user_id'],))
         user = cursor.fetchone()
         
-        # ✅ Fetch all events
         cursor.execute("""
             SELECT *
             FROM events
-            ORDER BY deadline ASC
+            ORDER BY created_at DESC
         """)
         all_events = cursor.fetchall()
 
-        # Filter out events whose deadline is in the past
         events = []
         today = date.today()
 
+        user_year_raw = (user.get('year') or "").strip().lower()
+        def _norm_year(y):
+            y = y.replace("year", "").strip()
+            mapping = {
+                "1": "1st", "i": "1st", "first": "1st", "1st": "1st",
+                "2": "2nd", "ii": "2nd", "second": "2nd", "2nd": "2nd",
+                "3": "3rd", "iii": "3rd", "third": "3rd", "3rd": "3rd",
+                "4": "4th", "iv": "4th", "fourth": "4th", "4th": "4th"
+            }
+            return mapping.get(y, y)
+        user_year_norm = _norm_year(user_year_raw)
+
         for ev in all_events:
-            dl = ev.get('deadline')
+            dl = ev.get('registration_deadline') or ev.get('deadline')
             include = True
 
             if dl is None:
@@ -68,11 +93,87 @@ def dashboard():
                     include = False
 
             if include:
+                et = ev.get('end_time')
+                if et is not None:
+                    if isinstance(et, datetime):
+                        et_dt = et
+                    elif isinstance(et, date):
+                        et_dt = datetime.combine(et, datetime.min.time())
+                    else:
+                        et_dt = None
+                        for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d", "%d-%m-%Y %H:%M:%S", "%d-%m-%Y"):
+                            try:
+                                et_dt = datetime.strptime(str(et), fmt)
+                                break
+                            except Exception:
+                                continue
+                    if et_dt and et_dt.date() < today:
+                        include = False
+
+            if include:
+                target_years_str = (ev.get('target_years') or "").strip()
+                if target_years_str and user_year_norm:
+                    allowed_years = [_norm_year(y.strip().lower()) for y in target_years_str.split(",") if y.strip()]
+                    if allowed_years and user_year_norm not in allowed_years:
+                        include = False
+
+            if include:
                 events.append(ev)
 
-        # ✅ Attach team info if student already registered (only for included events)
+        filtered_events = []
+        for ev in events:
+            if type_filter:
+                ev_type = (ev.get('event_type') or "").strip()
+                if ev_type.lower() != type_filter.lower():
+                    continue
+
+            if mode_filter:
+                ev_mode = (ev.get('mode') or "").strip()
+                if ev_mode.lower() != mode_filter.lower():
+                    continue
+
+            if domain_filter:
+                ev_domains = (ev.get('domains') or "")
+                if domain_filter.lower() not in ev_domains.lower():
+                    continue
+
+            ev_date_raw = ev.get('event_date')
+            ev_date_value = None
+            if ev_date_raw is not None:
+                if isinstance(ev_date_raw, datetime):
+                    ev_date_value = ev_date_raw.date()
+                elif isinstance(ev_date_raw, date):
+                    ev_date_value = ev_date_raw
+                else:
+                    for fmt in ("%Y-%m-%d", "%Y-%m-%d %H:%M:%S", "%d-%m-%Y", "%d/%m/%Y"):
+                        try:
+                            parsed = datetime.strptime(str(ev_date_raw), fmt)
+                            ev_date_value = parsed.date()
+                            break
+                        except Exception:
+                            continue
+
+            if from_date and ev_date_value and ev_date_value < from_date:
+                continue
+            if to_date and ev_date_value and ev_date_value > to_date:
+                continue
+
+            if search_query:
+                haystack_parts = [
+                    ev.get('title') or "",
+                    ev.get('organizer') or ev.get('club_name') or "",
+                    ev.get('description') or "",
+                    ev.get('domains') or ""
+                ]
+                haystack = " ".join(str(p) for p in haystack_parts).lower()
+                if search_query.lower() not in haystack:
+                    continue
+
+            filtered_events.append(ev)
+
+        events = filtered_events
+
         for event in events:
-            # Check registration
             cursor.execute("""
                 SELECT 
                     r.id AS registration_id,
@@ -125,6 +226,7 @@ def dashboard():
         print(f"Error loading dashboard: {e}")
         events = []
         user = {}
+        collaborations = []
     finally:
         cursor.close()
 
@@ -132,7 +234,13 @@ def dashboard():
         'student_dashboard.html',
         events=events,
         user=user,
-        collaborations=collaborations
+        collaborations=collaborations,
+        search_query=search_query,
+        type_filter=type_filter,
+        domain_filter=domain_filter,
+        mode_filter=mode_filter,
+        from_date_str=from_date_str,
+        to_date_str=to_date_str
     )
 
 @student_bp.route('/student/profile', methods=['GET', 'POST'])

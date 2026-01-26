@@ -105,6 +105,10 @@
                                 <input type="text" name="domain" class="form-control" placeholder="e.g. AI, Web">
                             </div>
                             <div>
+                                <label class="form-label">Required Skills</label>
+                                <input type="text" name="required_skills" class="form-control" placeholder="e.g. Python, React, ML">
+                            </div>
+                            <div>
                                 <label class="form-label">Branch</label>
                                 <input type="text" name="branch" class="form-control" placeholder="Branch">
                             </div>
@@ -143,6 +147,11 @@
                                             <div class="event-meta">
                                                 <i class="fas fa-laptop-code"></i> {{ r.domain }}
                                             </div>
+                                            {% if r.required_skills %}
+                                            <div class="event-meta">
+                                                <i class="fas fa-tools"></i> {{ r.required_skills }}
+                                            </div>
+                                            {% endif %}
                                             <div class="event-meta">
                                                 <i class="fas fa-university"></i> {{ r.branch }} ({{ r.year }})
                                             </div>

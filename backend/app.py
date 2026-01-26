@@ -8,30 +8,16 @@ from routes.student import student_bp
 from routes.collaboration import collaboration_bp
 from db import db
 import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = "secret123"
+app.secret_key = os.getenv("SECRET_KEY", "dev_secret_key_change_in_production")
 app.config['TEMPLATES_AUTO_RELOAD'] = True  # Auto-reload templates
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0  # Prevent caching of static files
-def load_env_file():
-    root_env = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.env'))
-    local_env = os.path.abspath(os.path.join(os.path.dirname(__file__), '.env'))
-    for p in (root_env, local_env):
-        if os.path.isfile(p):
-            try:
-                with open(p, 'r', encoding='utf-8') as f:
-                    for line in f:
-                        line = line.strip()
-                        if not line or line.startswith('#') or '=' not in line:
-                            continue
-                        k, v = line.split('=', 1)
-                        k = k.strip()
-                        v = v.strip().strip('"').strip("'")
-                        if k and v and not os.environ.get(k):
-                            os.environ[k] = v
-            except Exception:
-                pass
-load_env_file()
+
 app.config.update({
     "SMTP_HOST": os.environ.get("SMTP_HOST"),
     "SMTP_PORT": os.environ.get("SMTP_PORT") or 587,
@@ -61,7 +47,7 @@ app.register_blueprint(collaboration_bp)
 # ===============================
 @app.route('/')
 def home():
-    return redirect(url_for('auth.login'))
+    return render_template('landing.html', now=datetime.now())
 
 # ===============================
 # RUN APP

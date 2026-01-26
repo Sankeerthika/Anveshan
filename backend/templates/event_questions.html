@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ event.title }} | Q&A</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/unstop_theme.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <a href="{{ url_for('student.dashboard') }}" class="logo-container">
+                    <div class="logo-icon">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <span class="logo-text">Anveshan</span>
+                </a>
+            </div>
+            {% if user %}
+            <div class="user-profile-sidebar">
+                <div style="width: 80px; height: 80px; background: #e0e0e0; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px auto; color: #666; font-size: 30px;">
+                    <i class="fas fa-user"></i>
+                </div>
+                <h4 style="margin: 0; font-size: 1.1rem;">{{ user.name or 'Student' }}</h4>
+                <p style="color: #666; font-size: 0.85rem;">{{ user.role|title }}</p>
+            </div>
+            {% endif %}
+            <ul class="sidebar-menu">
+                <li>
+                    <a href="{{ url_for('student.dashboard') }}" class="active">
+                        <i class="fas fa-th-large"></i> Dashboard
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('events.events') }}">
+                        <i class="fas fa-calendar"></i> All Events
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('auth.logout') }}">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="main-content">
+            <div style="margin-bottom: 24px; display: flex; align-items: center;">
+                <button class="toggle-sidebar-btn" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div style="margin-left: 12px;">
+                    <h2 style="margin: 0;">{{ event.title }} – Q&A</h2>
+                    <p style="color: var(--text-muted); margin: 0;">Ask doubts and view organizer responses</p>
+                </div>
+                <a href="{{ url_for('student.dashboard') }}" class="btn-primary" style="margin-left: auto; text-decoration: none;">Back to Dashboard</a>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="card" style="padding:12px; margin-bottom:12px; border-left:4px solid {% if category=='success' %}#28a745{% elif category=='danger' %}#dc3545{% else %}#1C4980{% endif %};">
+                            <div style="color: var(--text-color);">{{ message }}</div>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <div class="card" style="max-width: 900px; margin: 0 auto 16px;">
+                <form method="POST" action="{{ url_for('events.submit_question') }}">
+                    <input type="hidden" name="event_id" value="{{ event.id }}">
+                    <div class="form-group">
+                        <label>Your Doubt</label>
+                        <textarea name="question" class="form-control" rows="3" placeholder="Type your question..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn-primary" style="margin-top: 8px;">Submit Question</button>
+                </form>
+            </div>
+
+            <div class="card" style="max-width: 900px; margin: 0 auto;">
+                {% if questions and questions|length > 0 %}
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 12px;">
+                        {% for q in questions %}
+                        <div class="card" style="margin-bottom: 0;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                <span style="font-size: 0.8rem; color: #666;">Asked by: {{ q.student_email }}</span>
+                                <span style="font-size: 0.8rem; color: {% if q.status == 'answered' %}#4CAF50{% else %}#FF9800{% endif %}; font-weight: bold;">{{ q.status|title }}</span>
+                            </div>
+                            <p style="margin-bottom: 5px; font-weight: 600;">{{ q.question }}</p>
+                            {% if q.answer %}
+                            <div style="background: #f6f8ff; border-left: 4px solid #1C4980; padding: 10px; border-radius: 6px;">
+                                <p style="margin: 0; color: #334;">Answer: {{ q.answer }}</p>
+                            </div>
+                            {% else %}
+                            <p style="margin: 0; color: #888;">Awaiting reply from organizer</p>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div style="text-align: center; padding: 30px;">
+                        <i class="far fa-comments fa-3x" style="color: #ccc; margin-bottom: 12px;"></i>
+                        <p style="color: #666;">No questions yet. Be the first to ask!</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const container = document.querySelector('.dashboard-container');
+            sidebar.classList.toggle('collapsed');
+            container.classList.toggle('sidebar-collapsed');
+            const isCollapsed = sidebar.classList.contains('collapsed');
+            localStorage.setItem('sidebarCollapsed', isCollapsed);
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            if (isCollapsed) {
+                document.getElementById('sidebar').classList.add('collapsed');
+                document.querySelector('.dashboard-container').classList.add('sidebar-collapsed');
+            }
+        });
+    </script>
+</body>
+</html>

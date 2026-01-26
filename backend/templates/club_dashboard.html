@@ -36,13 +36,8 @@
                     </a>
                 </li>
                 <li>
-                    <a href="{{ url_for('events.create_event') }}">
-                        <i class="fas fa-calendar-plus"></i> Manage Events
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url_for('events.view_registrations') }}">
-                        <i class="fas fa-list-alt"></i> Registrations
+                    <a href="{{ url_for('club.post_announcement_page') }}">
+                        <i class="fas fa-bullhorn"></i> Post Announcement
                     </a>
                 </li>
                 <li>
@@ -110,59 +105,36 @@
                             <p style="margin: 0; color: var(--text-muted); font-size: 0.9rem;">Upcoming Events</p>
                         </div>
                     </div>
-
-                    <!-- Upcoming Tech Talks -->
-                    <div class="card" style="margin-bottom: 0; display: flex; align-items: center; padding: 20px;">
-                         <div style="background: #f3e5f5; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 15px;">
-                            <i class="fas fa-microphone" style="color: #7b1fa2; font-size: 24px;"></i>
-                        </div>
-                        <div>
-                            <h2 style="margin: 0; font-size: 1.8rem; color: #7b1fa2;">{{ techtalk_stats.upcoming|default(0) }}</h2>
-                            <p style="margin: 0; color: var(--text-muted); font-size: 0.9rem;">Active Tech Talks</p>
-                        </div>
-                    </div>
                 </div>
             {% endif %}
 
             <!-- QUICK ACTIONS -->
             <h3 class="card-title" style="margin-bottom: 20px;">Management Tools</h3>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 40px;">
-                
-                <a href="{{ url_for('events.create_event') }}" style="text-decoration: none;">
-                    <div class="card" style="height: 100%; transition: transform 0.2s; margin-bottom: 0;">
+            <div style="display: flex; gap: 16px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 24px;">
+                <a href="{{ url_for('club.edit_announcements_page') }}" style="text-decoration: none;">
+                    <div class="card" style="height: 100%; transition: transform 0.2s; margin-bottom: 0; min-width: 280px;">
                         <div style="text-align: center; padding: 20px;">
-                            <i class="fas fa-plus-circle fa-3x" style="color: var(--secondary-color); margin-bottom: 15px;"></i>
-                            <h4 style="margin: 0; color: var(--text-color);">Create / Manage Events</h4>
-                            <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 10px;">Launch new hackathons or workshops.</p>
+                            <i class="fas fa-edit fa-3x" style="color: #1C4980; margin-bottom: 15px;"></i>
+                            <h4 style="margin: 0; color: var(--text-color);">Edit Active Hackathon</h4>
+                            <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 10px;">Update title, link, deadline.</p>
                         </div>
                     </div>
                 </a>
-
-                <a href="{{ url_for('events.view_registrations') }}" style="text-decoration: none;">
-                    <div class="card" style="height: 100%; transition: transform 0.2s; margin-bottom: 0;">
+                <a href="{{ url_for('club.post_announcement_page') }}" style="text-decoration: none;">
+                    <div class="card" style="height: 100%; transition: transform 0.2s; margin-bottom: 0; min-width: 280px;">
                         <div style="text-align: center; padding: 20px;">
-                            <i class="fas fa-list-ul fa-3x" style="color: #28a745; margin-bottom: 15px;"></i>
-                            <h4 style="margin: 0; color: var(--text-color);">View Registrations</h4>
-                            <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 10px;">Check participant lists and teams.</p>
+                            <i class="fas fa-bullhorn fa-3x" style="color: var(--secondary-color); margin-bottom: 15px;"></i>
+                            <h4 style="margin: 0; color: var(--text-color);">Post Announcement</h4>
+                            <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 10px;">Poster + external registration link.</p>
                         </div>
                     </div>
                 </a>
-
-                <a href="{{ url_for('events.download_registrations') }}" style="text-decoration: none;">
-                    <div class="card" style="height: 100%; transition: transform 0.2s; margin-bottom: 0;">
-                        <div style="text-align: center; padding: 20px;">
-                            <i class="fas fa-file-csv fa-3x" style="color: #ffc107; margin-bottom: 15px;"></i>
-                            <h4 style="margin: 0; color: var(--text-color);">Export Data</h4>
-                            <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 10px;">Download CSV reports.</p>
-                        </div>
-                    </div>
-                </a>
-
             </div>
+
+            <div class="card" style="max-width: 900px; margin-bottom: 30px;">
 
             <!-- RECENT QUESTIONS -->
             {% if recent_questions and recent_questions|length > 0 %}
-                <h3 class="card-title" style="margin-bottom: 20px;">Recent Inquiries</h3>
                 <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
                     {% for q in recent_questions %}
                         <div class="card" style="margin-bottom: 0;">
