@@ -196,12 +196,39 @@ def setup_tables():
             max_students INT DEFAULT 0,
             max_faculty INT DEFAULT 0,
             required_skills TEXT,
+            required_skills_must TEXT,
+            required_skills_nice TEXT,
+            strict_visibility TINYINT(1) DEFAULT 0,
             status ENUM('open', 'closed') DEFAULT 'open',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (faculty_id) REFERENCES users(id) ON DELETE CASCADE
         )
     """)
     print("- faculty_collaborations table checked.")
+
+    # Ensure new columns exist for backward DBs
+    import mysql.connector
+    try:
+        cursor.execute("ALTER TABLE faculty_collaborations ADD COLUMN required_skills_must TEXT")
+    except mysql.connector.Error as err:
+        if err.errno == 1060:
+            pass
+        else:
+            print(f"Error ensuring column required_skills_must: {err}")
+    try:
+        cursor.execute("ALTER TABLE faculty_collaborations ADD COLUMN required_skills_nice TEXT")
+    except mysql.connector.Error as err:
+        if err.errno == 1060:
+            pass
+        else:
+            print(f"Error ensuring column required_skills_nice: {err}")
+    try:
+        cursor.execute("ALTER TABLE faculty_collaborations ADD COLUMN strict_visibility TINYINT(1) DEFAULT 0")
+    except mysql.connector.Error as err:
+        if err.errno == 1060:
+            pass
+        else:
+            print(f"Error ensuring column strict_visibility: {err}")
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS collaboration_requests (

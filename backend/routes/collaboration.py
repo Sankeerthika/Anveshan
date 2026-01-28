@@ -36,6 +36,14 @@ def community():
         # Remove duplicates
         filter_keywords = list(set(filter_keywords))
 
+    # For faculty, also use their own skills/interests as matching signals
+    if not show_all:
+        if user and user.get('role') == 'faculty':
+            skills_terms = [t.strip() for t in (user.get('skills') or '').split(',') if t.strip()]
+            interest_terms = [t.strip() for t in (user.get('interests') or '').split(',') if t.strip()]
+            filter_keywords.extend(skills_terms + interest_terms)
+            filter_keywords = list(set(filter_keywords))
+
     # 2. Fetch profiles based on filter
     if filter_keywords:
         query_parts = []
@@ -479,7 +487,7 @@ def faculty_dashboard():
         WHERE faculty_id = %s AND status = 'closed'
         ORDER BY created_at DESC
     """, (session['user_id'],))
-    published_collabs = cursor.fetchall()
+    closed_collabs = cursor.fetchall()
 
     # 4. Fetch Incoming Requests (Pending)
     cursor.execute("""
@@ -492,8 +500,27 @@ def faculty_dashboard():
     """, (session['user_id'],))
     incoming_requests = cursor.fetchall()
 
+    # Apply strict visibility filtering for listings if enabled
+    def _skills_list(s): 
+        return [t.strip().lower() for t in (s or "").split(",") if t.strip()]
+    viewer_skills = _skills_list(user.get('skills'))
+    def _matches(collab):
+        if collab.get('faculty_id') == session['user_id']:
+            return True
+        vis_flag = collab.get('strict_visibility', collab.get('hide_non_matching', 0))
+        if vis_flag != 1:
+            return True
+        # Only enforce when audience includes faculty
+        if collab.get('audience') not in ('faculty_only', 'both'):
+            return True
+        req_must = _skills_list(collab.get('required_skills_must') or collab.get('must_have_skills') or collab.get('required_skills'))
+        # Must-have needs intersection
+        return (not req_must) or any(k in viewer_skills for k in req_must)
+    active_collabs = [c for c in active_collabs if _matches(c)]
+    closed_collabs = [c for c in closed_collabs if _matches(c)]
+
     cursor.close()
-    return render_template('faculty_dashboard.html', user=user, active_collabs=active_collabs, published_collabs=published_collabs, requests=incoming_requests)
+    return render_template('faculty_dashboard.html', user=user, active_collabs=active_collabs, closed_collabs=closed_collabs, requests=incoming_requests)
 
 @collaboration_bp.route('/faculty/create', methods=['GET', 'POST'])
 def create_faculty_collaboration():
@@ -510,27 +537,53 @@ def create_faculty_collaboration():
         return redirect(url_for('collaboration.community'))
 
     if request.method == 'POST':
-        title = request.form.get('title')
-        description = request.form.get('description')
-        collab_type = request.form.get('type') # article, project
-        audience = request.form.get('audience') # faculty_only, students_only, both
-        max_students = request.form.get('max_students', 0)
-        max_faculty = request.form.get('max_faculty', 0)
-        required_skills = request.form.get('required_skills', '')
+        title = (request.form.get('title') or '').strip()
+        description = (request.form.get('description') or '').strip()
+        collab_type = (request.form.get('type') or 'article').strip()
+        audience = (request.form.get('audience') or 'faculty_only').strip()
+        try:
+            max_students = int(request.form.get('max_students') or 0)
+        except ValueError:
+            max_students = 0
+        try:
+            max_faculty = int(request.form.get('max_faculty') or 0)
+        except ValueError:
+            max_faculty = 0
+        required_skills_must = (request.form.get('required_skills_must') or '').strip()
+        required_skills_nice = (request.form.get('required_skills_nice') or '').strip()
+        strict_raw = (request.form.get('strict_visibility') or '').strip().lower()
+        strict_visibility = 1 if strict_raw in ('on', '1', 'true', 'yes') else 0
+        # Legacy aggregate (optional)
+        required_skills = ", ".join([s for s in [required_skills_must, required_skills_nice] if s.strip()])
 
         try:
-            cursor.execute("""
-                INSERT INTO faculty_collaborations 
-                (faculty_id, title, description, collaboration_type, audience, max_students, max_faculty, required_skills)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-            """, (session['user_id'], title, description, collab_type, audience, max_students, max_faculty, required_skills))
+            cursor.execute("SHOW COLUMNS FROM faculty_collaborations")
+            cols = [c['Field'] if isinstance(c, dict) else c[0] for c in cursor.fetchall()]
+            available = set(cols)
+            insert_cols = ['faculty_id','title','description','collaboration_type','audience','max_students','max_faculty','required_skills']
+            values = [session['user_id'], title, description, collab_type, audience, max_students, max_faculty, required_skills]
+            if 'required_skills_must' in available:
+                insert_cols.append('required_skills_must'); values.append(required_skills_must)
+            elif 'must_have_skills' in available:
+                insert_cols.append('must_have_skills'); values.append(required_skills_must)
+            if 'required_skills_nice' in available:
+                insert_cols.append('required_skills_nice'); values.append(required_skills_nice)
+            elif 'nice_to_have_skills' in available:
+                insert_cols.append('nice_to_have_skills'); values.append(required_skills_nice)
+            if 'strict_visibility' in available:
+                insert_cols.append('strict_visibility'); values.append(strict_visibility)
+            elif 'hide_non_matching' in available:
+                insert_cols.append('hide_non_matching'); values.append(strict_visibility)
+            cols_sql = ", ".join(insert_cols)
+            ph_sql = ", ".join(["%s"] * len(values))
+            cursor.execute(f"INSERT INTO faculty_collaborations ({cols_sql}) VALUES ({ph_sql})", tuple(values))
             db.commit()
             flash("Collaboration posted successfully!", "success")
             return redirect(url_for('collaboration.faculty_dashboard'))
         except Exception as e:
             db.rollback()
             print(f"Error creating faculty collab: {e}")
-            flash("Error creating collaboration.", "danger")
+            flash(f"Error creating collaboration: {e}", "danger")
     
     cursor.close()
     return render_template('create_faculty_collaboration.html', user=user)
@@ -587,6 +640,38 @@ def faculty_collaboration_details(collab_id):
     collab['current_students'] = current_students
     collab['current_faculty'] = current_faculty
 
+    # Recommended faculty (for owner)
+    recommended_faculty = []
+    if user['id'] == collab['faculty_id']:
+        req_must = [s.strip().lower() for s in (collab.get('required_skills_must') or "").split(',') if s.strip()]
+        req_nice = [s.strip().lower() for s in (collab.get('required_skills_nice') or "").split(',') if s.strip()]
+        # Build a simple scoring: skills matches + project domain/tech_stack matches
+        kws = req_must + req_nice
+        params = [user['id']]
+        where_parts = []
+        for k in kws:
+            where_parts.append("LOWER(skills) LIKE %s OR LOWER(interests) LIKE %s")
+            params.extend([f"%{k}%", f"%{k}%"])
+        base = "SELECT id, name, skills, interests, profile_photo FROM users WHERE role='faculty' AND id != %s"
+        if where_parts:
+            base += " AND (" + " OR ".join(where_parts) + ")"
+        base += " LIMIT 12"
+        temp_cursor = db.cursor(dictionary=True)
+        temp_cursor.execute(base, tuple(params))
+        candidates = temp_cursor.fetchall()
+        # Score candidates
+        def _score(u):
+            us = [s.strip().lower() for s in (u.get('skills') or '').split(',') if s.strip()]
+            score = 0
+            for k in req_must:
+                if k in us: score += 2
+            for k in req_nice:
+                if k in us: score += 1
+            return score
+        candidates.sort(key=_score, reverse=True)
+        recommended_faculty = candidates[:6]
+        temp_cursor.close()
+
     # Check eligibility to apply
     can_apply = True
     rejection_reason = None
@@ -611,15 +696,15 @@ def faculty_collaboration_details(collab_id):
                 rejection_reason = "Student limit reached."
             else:
                 # Skill Check
-                req_skills = [s.strip().lower() for s in (collab['required_skills'] or "").split(',') if s.strip()]
+                req_skills_must = [s.strip().lower() for s in (collab.get('required_skills_must') or "").split(',') if s.strip()]
                 user_skills = [s.strip().lower() for s in (user['skills'] or "").split(',') if s.strip()]
                 
                 # Check intersection
-                if req_skills:
-                    has_skill = any(skill in user_skills for skill in req_skills)
+                if req_skills_must:
+                    has_skill = any(skill in user_skills for skill in req_skills_must)
                     if not has_skill:
                         can_apply = False
-                        rejection_reason = f"Missing required skills: {', '.join(req_skills)}"
+                        rejection_reason = f"Missing must-have skills: {', '.join(req_skills_must)}"
 
         elif user['role'] == 'faculty':
             # Faculty applying to another faculty's project
@@ -632,6 +717,14 @@ def faculty_collaboration_details(collab_id):
             elif current_faculty >= collab['max_faculty']:
                 can_apply = False
                 rejection_reason = "Faculty limit reached."
+            else:
+                req_skills_f = [s.strip().lower() for s in (collab.get('required_skills_must') or "").split(',') if s.strip()]
+                user_skills_f = [s.strip().lower() for s in (user['skills'] or "").split(',') if s.strip()]
+                if req_skills_f:
+                    has_skill_f = any(skill in user_skills_f for skill in req_skills_f)
+                    if not has_skill_f:
+                        can_apply = False
+                        rejection_reason = f"Missing must-have skills: {', '.join(req_skills_f)}"
 
     # Fetch pending requests if owner
     requests = []
@@ -645,7 +738,7 @@ def faculty_collaboration_details(collab_id):
         requests = cursor.fetchall()
 
     cursor.close()
-    return render_template('faculty_collaboration_details.html', user=user, collab=collab, can_apply=can_apply, rejection_reason=rejection_reason, requests=requests)
+    return render_template('faculty_collaboration_details.html', user=user, collab=collab, can_apply=can_apply, rejection_reason=rejection_reason, requests=requests, recommended_faculty=recommended_faculty)
 
 @collaboration_bp.route('/faculty/collaboration/<int:collab_id>/apply', methods=['POST'])
 def apply_faculty_collaboration(collab_id):
