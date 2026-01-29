@@ -4,6 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Find Team | Anveshan</title>
+    <script>
+        try {
+            if (localStorage.getItem('sidebarCollapsed') === 'true') {
+                document.documentElement.classList.add('sidebar-collapsed');
+            }
+            document.documentElement.classList.add('preload');
+        } catch (e) {}
+    </script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/unstop_theme.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
@@ -181,20 +189,14 @@
     <script src="{{ url_for('static', filename='js/find_team.js') }}"></script>
     <script>
         function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const container = document.querySelector('.dashboard-container');
-            sidebar.classList.toggle('collapsed');
-            container.classList.toggle('sidebar-collapsed');
-            const isCollapsed = sidebar.classList.contains('collapsed');
+            const htmlEl = document.documentElement;
+            htmlEl.classList.toggle('sidebar-collapsed');
+            const isCollapsed = htmlEl.classList.contains('sidebar-collapsed');
             localStorage.setItem('sidebarCollapsed', isCollapsed);
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
-            if (isCollapsed) {
-                document.getElementById('sidebar').classList.add('collapsed');
-                document.querySelector('.dashboard-container').classList.add('sidebar-collapsed');
-            }
+            setTimeout(() => { document.documentElement.classList.remove('preload'); }, 0);
         });
     </script>
 </body>

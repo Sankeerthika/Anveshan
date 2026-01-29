@@ -258,7 +258,11 @@
                                                  {% endfor %}
                                              {% endif %}
                                         </div>
-                                        <a href="{{ url_for('collaboration.view_profile', profile_id=profile.id) }}" class="btn-secondary" style="font-size: 0.8rem; padding: 5px 15px; width: 100%; display: inline-block;">View Profile</a>
+                                        <div style="margin:8px 0; color:#1C4980; font-weight:600; font-size:0.85rem;">Match: {{ profile.match_percent }}%</div>
+                                        <a href="{{ url_for('collaboration.view_profile', profile_id=profile.id) }}" class="btn-secondary" style="font-size: 0.8rem; padding: 5px 15px; width: 100%; display: inline-block; margin-bottom:8px;">View Profile</a>
+                                        <form action="{{ url_for('collaboration.invite_project_user', project_id=project.id, user_id=profile.id) }}" method="POST" style="margin:0;">
+                                            <button type="submit" class="btn-apply" style="width:100%;">Invite to Collaborate</button>
+                                        </form>
                                     </div>
                                 {% endfor %}
                             </div>

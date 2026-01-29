@@ -3,57 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Question | Anveshan</title>
+    <title>Edit Active Hackathons | Anveshan</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/unstop_theme.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-
     <div class="dashboard-container">
-        <!-- Sidebar -->
         <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <a href="{{ url_for('student.dashboard') }}" class="logo-container">
+                <a href="{{ url_for('club.club_dashboard') }}" class="logo-container">
                     <div class="logo-icon">
                         <i class="fas fa-search"></i>
                     </div>
                     <span class="logo-text">Anveshan</span>
                 </a>
             </div>
-
             <div class="user-profile-sidebar">
-                <img src="{{ url_for('static', filename='uploads/profile_pics/' + (user.profile_photo if user.profile_photo else 'default.png')) }}" 
-                     alt="Profile" class="user-avatar-small"
-                     onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><rect width=%27100%27 height=%27100%27 fill=%27%23e0e0e0%27/><text x=%2750%27 y=%2755%27 font-size=%2712%27 text-anchor=%27middle%27 fill=%27%23666%27>Avatar</text></svg>'">
-                <h4 style="margin: 0; font-size: 1.1rem;">{{ user.name or 'Student' }}</h4>
-                <p style="color: #666; font-size: 0.85rem;">{{ user.role|title }}</p>
-                <a href="{{ url_for('student.profile') }}" style="font-size: 0.8rem; color: var(--secondary-color);">Edit Profile</a>
+                <div style="width: 80px; height: 80px; background: #e0e0e0; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px auto; color: #666; font-size: 30px;">
+                    <i class="fas fa-users"></i>
+                </div>
+                <h4 style="margin: 0; font-size: 1.1rem;">{{ club.name if club else 'Club Admin' }}</h4>
+                <p style="color: #666; font-size: 0.85rem;">Organizer</p>
             </div>
-
             <ul class="sidebar-menu">
                 <li>
-                    <a href="{{ url_for('student.dashboard') }}">
+                    <a href="{{ url_for('club.club_dashboard') }}" class="active">
                         <i class="fas fa-th-large"></i> Dashboard
                     </a>
                 </li>
                 <li>
-                    <a href="{{ url_for('collaboration.community') }}">
-                        <i class="fas fa-users-cog"></i> Community
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url_for('student.profile') }}">
-                        <i class="fas fa-user"></i> My Profile
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url_for('find_team.find_team') }}">
-                        <i class="fas fa-users"></i> Find Team
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url_for('find_team.my_join_requests') }}">
-                        <i class="fas fa-envelope"></i> My Requests
+                    <a href="{{ url_for('club.post_announcement_page') }}">
+                        <i class="fas fa-bullhorn"></i> Post Announcement
                     </a>
                 </li>
                 <li>
@@ -64,29 +44,39 @@
             </ul>
         </div>
 
-        <!-- Main Content -->
         <div class="main-content">
-            <div class="header" style="margin-bottom: 30px; display: flex; align-items: center;">
+            <div style="margin-bottom: 24px; display: flex; align-items: center;">
                 <button class="toggle-sidebar-btn" onclick="toggleSidebar()">
                     <i class="fas fa-bars"></i>
                 </button>
-                <div style="margin-left: 15px;">
-                    <h2 style="margin: 0;">Edit Question</h2>
-                    <p style="color: var(--text-muted); margin: 0;">Event ID: {{ q.event_id }}</p>
+                <div style="margin-left: 12px;">
+                    <h2 style="margin: 0;">Edit Active Hackathons</h2>
+                    <p style="color: var(--text-muted); margin: 0;">Select a hackathon to update details</p>
                 </div>
-                <a href="{{ url_for('student.dashboard') }}" class="btn-primary" style="margin-left: auto; text-decoration: none; display: inline-block; width: auto;">Back to Dashboard</a>
+                <a href="{{ url_for('club.club_dashboard') }}" class="btn-primary" style="margin-left: auto; text-decoration: none;">Back to Dashboard</a>
             </div>
 
-            <div class="card" style="max-width: 800px; margin: 0 auto;">
-                <h3 class="card-title">Edit Your Question</h3>
-                <form method="POST">
-                    <div class="form-group">
-                        <label for="question">Question</label>
-                        <textarea name="question" id="question" rows="6" class="form-control">{{ q.question }}</textarea>
+            {% if events and events|length > 0 %}
+            <div class="card" style="max-width: 900px; margin: 0 auto;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
+                    {% for e in events %}
+                    <div class="card" style="margin-bottom: 0;">
+                        <span style="display: inline-block; padding: 5px 12px; border-radius: 15px; background: #e6f0ff; color: var(--primary-color); font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 15px;">{{ e.event_type }}</span>
+                        <h3 style="margin: 0 0 10px 0; font-size: 1.2rem;">{{ e.title }}</h3>
+                        {% if e.deadline %}
+                        <p style="margin: 5px 0; font-size: 0.9rem; color: var(--text-muted);"><i class="fas fa-clock" style="width: 20px;"></i> Registration Ends: {{ e.deadline }}</p>
+                        {% endif %}
+                        <a href="{{ url_for('club.edit_announcement', event_id=e.id) }}" class="btn-apply" style="width: auto; padding: 8px 16px;">Edit</a>
                     </div>
-                    <button class="btn-primary" style="margin-top: 15px;">Save Changes</button>
-                </form>
+                    {% endfor %}
+                </div>
             </div>
+            {% else %}
+            <div class="card" style="text-align: center; padding: 30px;">
+                <i class="far fa-calendar-times fa-3x" style="color: #ccc; margin-bottom: 20px;"></i>
+                <p style="color: #666;">No active hackathons to edit.</p>
+            </div>
+            {% endif %}
         </div>
     </div>
 
@@ -94,24 +84,16 @@
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const container = document.querySelector('.dashboard-container');
-            
             sidebar.classList.toggle('collapsed');
             container.classList.toggle('sidebar-collapsed');
-            
-            // Save state to local storage
             const isCollapsed = sidebar.classList.contains('collapsed');
             localStorage.setItem('sidebarCollapsed', isCollapsed);
         }
-
-        // Restore sidebar state on page load
         document.addEventListener('DOMContentLoaded', () => {
-            const sidebar = document.getElementById('sidebar');
-            const container = document.querySelector('.dashboard-container');
             const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
-            
             if (isCollapsed) {
-                sidebar.classList.add('collapsed');
-                container.classList.add('sidebar-collapsed');
+                document.getElementById('sidebar').classList.add('collapsed');
+                document.querySelector('.dashboard-container').classList.add('sidebar-collapsed');
             }
         });
     </script>

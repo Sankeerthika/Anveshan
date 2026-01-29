@@ -224,6 +224,7 @@ def edit_announcements_page():
         has_deadline = column_exists('deadline')
         has_start_time = column_exists('start_time')
         has_end_time = column_exists('end_time')
+        has_created_at = column_exists('created_at')
         where_clause = []
         params = []
         if has_created_by:
@@ -254,11 +255,12 @@ def edit_announcements_page():
         else:
             active_cond_parts.append("1=1")
         active_cond = " OR ".join(active_cond_parts)
+        order_clause = "ORDER BY created_at DESC" if has_created_at else "ORDER BY id DESC"
         cursor.execute(f"""
             SELECT id, title, event_type, deadline, external_registration_link, target_years
             FROM events
             {wc}{" AND " if wc else " WHERE "}{active_cond}
-            ORDER BY created_at DESC
+            {order_clause}
         """, tuple(params))
         events = cursor.fetchall()
         cursor.execute("SELECT name FROM clubs WHERE id = %s", (club_id,))

@@ -57,7 +57,18 @@ except Exception:
 @events_bp.route('/events')
 def events():
     cursor = db.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM events ORDER BY created_at DESC")
+    def column_exists(col):
+        cursor.execute("""
+            SELECT COUNT(*) AS total
+            FROM information_schema.COLUMNS 
+            WHERE TABLE_SCHEMA = DATABASE() 
+              AND TABLE_NAME = 'events' 
+              AND COLUMN_NAME = %s
+        """, (col,))
+        res = cursor.fetchone()
+        return (res and (res.get('total', 0) if isinstance(res, dict) else (res[0] if res else 0)) > 0)
+    order_clause = "created_at DESC" if column_exists('created_at') else "id DESC"
+    cursor.execute(f"SELECT * FROM events ORDER BY {order_clause}")
     events = cursor.fetchall()
     cursor.close()
     return render_template('events.html', events=events)

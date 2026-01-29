@@ -1,17 +1,18 @@
-# backend/db.py
 import mysql.connector
 import sys
 import os
 from dotenv import load_dotenv
 
+# Load .env from project root if not already loaded
 if not load_dotenv():
     load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
 
-def _connect_db():
+def _connect_db(host_override=None):
     host_env = os.getenv("DB_HOST", "localhost")
-    hosts = [host_env] + (["127.0.0.1"] if host_env.lower() == "localhost" else [])
+    host = host_override or host_env
+    try_hosts = [host] + (["127.0.0.1"] if host.lower() == "localhost" else [])
     last_err = None
-    for h in hosts:
+    for h in try_hosts:
         try:
             return mysql.connector.connect(
                 host=h,
@@ -23,8 +24,54 @@ def _connect_db():
             )
         except mysql.connector.Error as err:
             last_err = err
-    print(f"Error connecting to MySQL: {last_err}")
-    print("Ensure that your MySQL server is running and reachable at the configured host and port.")
-    sys.exit(1)
+    raise last_err or RuntimeError("Unknown MySQL connection error")
 
-db = _connect_db()
+class ReconnectingDB:
+    def __init__(self):
+        self._conn = None
+        self._ensure()
+
+    def _ensure(self):
+        try:
+            if self._conn is None:
+                self._conn = _connect_db()
+            elif not self._conn.is_connected():
+                try:
+                    self._conn.reconnect(attempts=3, delay=2)
+                except Exception:
+                    self._conn = _connect_db()
+        except Exception as e:
+            print(f"Error connecting to MySQL: {e}")
+            print("Ensure that your MySQL server is running and reachable at the configured host and port.")
+            raise
+
+    def cursor(self, *args, **kwargs):
+        self._ensure()
+        return self._conn.cursor(*args, **kwargs)
+
+    def commit(self):
+        self._ensure()
+        return self._conn.commit()
+
+    def rollback(self):
+        try:
+            if self._conn:
+                return self._conn.rollback()
+        except Exception:
+            return None
+
+    def close(self):
+        try:
+            if self._conn:
+                self._conn.close()
+        except Exception:
+            pass
+
+    def is_connected(self):
+        try:
+            return self._conn.is_connected() if self._conn else False
+        except Exception:
+            return False
+
+# Export a reconnecting DB handle compatible with existing usage
+db = ReconnectingDB()

@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash, current_app
 from db import db
 
 find_team_bp = Blueprint('find_team', __name__)
@@ -60,9 +60,12 @@ def find_team():
     events = cursor.fetchall()
 
     # Build like-minded filter based on student's skills/interests and profile
+    from utils.skills import expand_skills
     skills_str = str(user.get('skills') or '')
     interests_str = str(user.get('interests') or '')
-    raw_terms = [t.strip().lower() for t in (skills_str.split(',') + interests_str.split(',')) if t.strip()]
+    initial_terms = [t.strip().lower() for t in (skills_str.split(',') + interests_str.split(',')) if t.strip()]
+    raw_terms = expand_skills(initial_terms)
+    
     # Year normalization similar to student dashboard
     user_year_raw = (user.get('year') or "").strip().lower()
     def _norm_year(y):
@@ -165,7 +168,7 @@ def join_team(request_id):
         name = request.form['name']
         branch = request.form['branch']
         year = request.form['year']
-        phone = request.form['phone']
+        phone = (request.form.get('phone') or '').strip()[:100]
 
         # 🚫 PREVENT DUPLICATE JOIN REQUEST
         cursor.execute("""
@@ -174,6 +177,7 @@ def join_team(request_id):
         """, (request_id, user_email))
 
         if cursor.fetchone():
+            flash("You have already requested to join this team.", "info")
             cursor.close()
             return redirect(url_for('find_team.find_team'))
 
@@ -184,6 +188,7 @@ def join_team(request_id):
         """, (request_id, name, user_email, branch, year, phone))
 
         db.commit()
+        flash("Join request sent to the team owner.", "success")
         cursor.close()
         return redirect(url_for('find_team.find_team'))
 
@@ -219,7 +224,7 @@ def my_team_requests():
         FROM join_requests jr
         JOIN team_requests tr ON jr.team_request_id = tr.id
         JOIN events e ON tr.event_id = e.id
-        WHERE tr.email = %s
+        WHERE LOWER(tr.email) = LOWER(%s)
         ORDER BY jr.id DESC
     """, (session['user_email'],))
 
@@ -286,7 +291,7 @@ def handle_join_request(request_id):
     # Log resulting status for debugging
     cursor.execute("SELECT status FROM join_requests WHERE id=%s", (request_id,))
     after = cursor.fetchone()
-    app.logger.info("join_request %s status after update: %s", request_id, after.get('status') if after else 'MISSING')
+    current_app.logger.info("join_request %s status after update: %s", request_id, after.get('status') if after else 'MISSING')
 
     cursor.close()
     return redirect(url_for('find_team.my_team_requests'))

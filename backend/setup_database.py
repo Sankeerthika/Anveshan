@@ -1,4 +1,5 @@
 import mysql.connector
+from mysql.connector import Error
 import os
 import sys
 from dotenv import load_dotenv
@@ -108,8 +109,8 @@ def setup_tables():
     for col_name, col_type in event_columns_to_ensure:
         try:
             cursor.execute(f"ALTER TABLE events ADD COLUMN {col_name} {col_type}")
-        except mysql.connector.Error as err:
-            if err.errno == 1060:
+        except Error as err:
+            if getattr(err, "errno", None) == 1060:
                 pass
             else:
                 print(f"Error ensuring events column {col_name}: {err}")
@@ -340,6 +341,18 @@ def setup_tables():
     """)
     print("- join_requests table checked.")
 
+    # Ensure join_requests.phone can store long links (e.g., LinkedIn URLs)
+    try:
+        cursor.execute("ALTER TABLE join_requests MODIFY COLUMN phone VARCHAR(100)")
+    except mysql.connector.Error as err:
+        if err.errno == 1265 or err.errno == 1060 or err.errno == 1292:
+            pass
+        else:
+            try:
+                cursor.execute("ALTER TABLE join_requests MODIFY COLUMN phone VARCHAR(100)")
+            except Exception:
+                pass
+
     # Ensure existing users table has all columns (Migration logic)
     # This handles cases where the table exists but is missing newer columns
     columns_to_ensure = [
@@ -366,6 +379,16 @@ def setup_tables():
                 pass 
             else:
                 print(f"  Error checking column {col_name}: {err}")
+
+    # Ensure critical users column sizes (hashed password, email)
+    try:
+        cursor.execute("ALTER TABLE users MODIFY COLUMN password VARCHAR(255)")
+    except Exception:
+        pass
+    try:
+        cursor.execute("ALTER TABLE users MODIFY COLUMN email VARCHAR(255)")
+    except Exception:
+        pass
 
     conn.commit()
     cursor.close()

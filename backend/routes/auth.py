@@ -132,10 +132,44 @@ def register():
             return redirect(url_for('auth.login'))
 
         except Error as e:
-            if e.errno == 1062:
+            try:
+                current_app.logger.error(f"Registration error for {email}: errno={getattr(e, 'errno', None)} msg={str(e)}")
+            except Exception:
+                pass
+            retriable = ("Connection not available" in str(e)) or (getattr(e, "errno", None) in (2006, 2013))
+            if retriable:
+                try:
+                    cursor2 = db.cursor()
+                    hashed_password = generate_password_hash(password)
+                    cursor2.execute(
+                        "INSERT INTO users (name, email, password, role) VALUES (%s, %s, %s, %s)",
+                        (name, email, hashed_password, role)
+                    )
+                    db.commit()
+                    cursor2.close()
+                    flash("Registration successful! Please login.", "success")
+                    return redirect(url_for('auth.login'))
+                except Error as e2:
+                    try:
+                        current_app.logger.error(f"Registration retry failed for {email}: errno={getattr(e2, 'errno', None)} msg={str(e2)}")
+                    except Exception:
+                        pass
+                    if getattr(e2, "errno", None) == 1062:
+                        flash("Email already registered", "warning")
+                    else:
+                        flash(f"Something went wrong (DB error {getattr(e2, 'errno', 'unknown')}): {str(e2)}", "danger")
+                    return redirect(url_for('auth.register'))
+            if getattr(e, "errno", None) == 1062:
                 flash("Email already registered", "warning")
             else:
-                flash("Something went wrong", "danger")
+                flash(f"Something went wrong (DB error {getattr(e, 'errno', 'unknown')}): {str(e)}", "danger")
+            return redirect(url_for('auth.register'))
+        except Exception as e:
+            try:
+                current_app.logger.error(f"Registration unexpected error for {email}: {str(e)}")
+            except Exception:
+                pass
+            flash(f"Unexpected error: {str(e)}", "danger")
             return redirect(url_for('auth.register'))
 
         finally:

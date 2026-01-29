@@ -3,6 +3,7 @@ from db import db
 import os
 from werkzeug.utils import secure_filename
 from datetime import datetime, date
+from utils.skills import expand_skills
 
 student_bp = Blueprint('student', __name__)
 
@@ -44,11 +45,19 @@ def dashboard():
         cursor.execute("SELECT * FROM users WHERE id = %s", (session['user_id'],))
         user = cursor.fetchone()
         
-        cursor.execute("""
-            SELECT *
-            FROM events
-            ORDER BY created_at DESC
-        """)
+        def column_exists(col):
+            cursor.execute("""
+                SELECT COUNT(*) AS total
+                FROM information_schema.COLUMNS 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                  AND TABLE_NAME = 'events' 
+                  AND COLUMN_NAME = %s
+            """, (col,))
+            res = cursor.fetchone()
+            return (res and (res.get('total', 0) if isinstance(res, dict) else (res[0] if res else 0)) > 0)
+
+        order_clause = "created_at DESC" if column_exists('created_at') else "id DESC"
+        cursor.execute(f"SELECT * FROM events ORDER BY {order_clause}")
         all_events = cursor.fetchall()
 
         events = []
@@ -112,7 +121,8 @@ def dashboard():
 
             if include:
                 target_years_str = (ev.get('target_years') or "").strip()
-                if target_years_str and user_year_norm:
+                ev_type_norm = (ev.get('event_type') or "").strip().lower()
+                if target_years_str and user_year_norm and ev_type_norm != 'hackathon':
                     allowed_years = [_norm_year(y.strip().lower()) for y in target_years_str.split(",") if y.strip()]
                     if allowed_years and user_year_norm not in allowed_years:
                         include = False
@@ -200,7 +210,7 @@ def dashboard():
         # ✅ Fetch faculty collaborations visible to students (status=open, audience=students_only/both)
         student_skills = []
         if user and user.get('skills'):
-            student_skills = [s.strip() for s in str(user['skills']).split(',') if s.strip()]
+            student_skills = expand_skills(str(user['skills']).split(','))
 
         base_sql = """
             SELECT fc.id, fc.title, fc.description, fc.collaboration_type, fc.audience, fc.required_skills, fc.created_at

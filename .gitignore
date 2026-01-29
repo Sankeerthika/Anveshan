@@ -1,113 +1,81 @@
+# =========================
 # Python
+# =========================
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
 build/
-develop-eggs/
 dist/
-downloads/
 eggs/
 .eggs/
-lib64/
-parts/
-sdist/
-var/
 wheels/
 *.egg-info/
 .installed.cfg
-*.egg
 MANIFEST
 
-# Virtual Environment
+# =========================
+# Virtual Environments
+# =========================
 venv/
 ENV/
+.venv/
 
-# Environment variables
+# =========================
+# Environment Variables
+# =========================
 .env
 .env.local
 .env.*.local
 
+# =========================
 # Database
-*.sqlite3
-
-# IDE specific files
-.idea/
-.vscode/
-*.swp
-*.swo
-
-# Logs
-*.log
-
-# Local development
-instance/
-.webassets-cache
-
-# Testing
-.coverage
-htmlcov/
-
-# Production
-/staticfiles/
-
-# macOS
-.DS_Store
-
-# Windows
-Thumbs.db
-ehthumbs.db
-Desktop.ini
-$RECYCLE.BIN/
-
-# VS Code
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# Local development
+# =========================
 *.sqlite
 *.sqlite3
 
-# Environment variables
-.env
-.env.local
+# =========================
+# Uploads (VERY IMPORTANT)
+# =========================
+backend/static/uploads/
 
-# Debug logs
+# =========================
+# Logs & Cache
+# =========================
 *.log
-
-# Local development
-instance/
-.webassets-cache
-
-# Testing
 .coverage
 htmlcov/
+.webassets-cache
+instance/
 
-# Production
-/staticfiles/
-
-# macOS
-.DS_Store
-
-# Windows
-Thumbs.db
-ehthumbs.db
-Desktop.ini
-$RECYCLE.BIN/
-
-# VS Code
+# =========================
+# IDE / Editor
+# =========================
+.idea/
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+*.swp
+*.swo
 
-# Jupyter Notebook
-.ipynb_checkpoints
+# =========================
+# Jupyter
+# =========================
+.ipynb_checkpoints/
+
+# =========================
+# OS Files
+# =========================
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# =========================
+# Production
+# =========================
+/staticfiles/
