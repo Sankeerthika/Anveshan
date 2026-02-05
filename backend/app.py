@@ -43,6 +43,22 @@ app.register_blueprint(student_bp)
 app.register_blueprint(collaboration_bp)
 
 # ===============================
+# CONTEXT PROCESSOR
+# ===============================
+@app.context_processor
+def inject_user():
+    user = None
+    if 'user_id' in session:
+        try:
+            cursor = db.cursor(dictionary=True)
+            cursor.execute("SELECT * FROM users WHERE id = %s", (session['user_id'],))
+            user = cursor.fetchone()
+            cursor.close()
+        except Exception as e:
+            app.logger.error(f"Error injecting user: {e}")
+    return dict(user=user, now=datetime.now())
+
+# ===============================
 # HOME ROUTE
 # ===============================
 @app.route('/')

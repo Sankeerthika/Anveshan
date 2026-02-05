@@ -139,6 +139,7 @@ def setup_tables():
             description TEXT,
             tech_stack VARCHAR(255),
             looking_for VARCHAR(255),
+            apply_deadline DATETIME NULL,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )
@@ -200,6 +201,7 @@ def setup_tables():
             required_skills_must TEXT,
             required_skills_nice TEXT,
             strict_visibility TINYINT(1) DEFAULT 0,
+            apply_deadline DATETIME NULL,
             status ENUM('open', 'closed') DEFAULT 'open',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (faculty_id) REFERENCES users(id) ON DELETE CASCADE
@@ -230,6 +232,20 @@ def setup_tables():
             pass
         else:
             print(f"Error ensuring column strict_visibility: {err}")
+    try:
+        cursor.execute("ALTER TABLE faculty_collaborations ADD COLUMN apply_deadline DATETIME NULL")
+    except mysql.connector.Error as err:
+        if err.errno == 1060:
+            pass
+        else:
+            print(f"Error ensuring column apply_deadline (faculty_collaborations): {err}")
+    try:
+        cursor.execute("ALTER TABLE personal_projects ADD COLUMN apply_deadline DATETIME NULL")
+    except mysql.connector.Error as err:
+        if err.errno == 1060:
+            pass
+        else:
+            print(f"Error ensuring column apply_deadline (personal_projects): {err}")
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS collaboration_requests (

@@ -1,467 +1,291 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Anveshan - Connecting Talent, Opportunities, and Innovation</title>
-    
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/unstop_theme.css') }}">
+{% extends "base.html" %}
 
-    <style>
-        :root {
-            --primary-color: #1C4980;
-            --secondary-color: #0073e6;
-            --accent-color: #ff9f1c; /* Orange */
-            --light-bg: #f4f6f8;
-            --text-dark: #1c1c1c;
-            --text-grey: #575757;
-        }
+{% block title %}Anveshan | Connect, Collaborate, Create{% endblock %}
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #fff; /* Unstop uses white primarily */
-            color: var(--text-dark);
-            overflow-x: hidden;
-        }
+{% block page_content %}
+    {% set dashboard_url = '#' %}
+    {% if session.get('role') == 'student' %}
+        {% set dashboard_url = url_for('student.dashboard') %}
+    {% elif session.get('role') == 'faculty' %}
+        {% set dashboard_url = url_for('collaboration.faculty_dashboard') %}
+    {% elif session.get('role') == 'club' %}
+        {% set dashboard_url = url_for('club.club_dashboard') %}
+    {% endif %}
 
-        /* --- Navbar --- */
-        .unstop-navbar {
-            background-color: #ffffff;
-            padding: 12px 0;
-            position: fixed;
-            width: 100%;
-            top: 0;
-            z-index: 1000;
-            border-bottom: 1px solid #eaeaea;
-        }
-        
-        .navbar-brand-logo {
-            font-size: 26px;
-            font-weight: 800;
-            color: var(--primary-color);
-            text-decoration: none;
-            letter-spacing: -0.5px;
-        }
-
-        .search-bar-container {
-            position: relative;
-            width: 300px;
-        }
-        
-        .search-input {
-            background-color: #f8f9fa;
-            border: 1px solid #e0e0e0;
-            border-radius: 20px;
-            padding: 8px 15px 8px 40px;
-            width: 100%;
-            font-size: 14px;
-            transition: all 0.2s;
-        }
-        .search-input:focus {
-            outline: none;
-            border-color: var(--secondary-color);
-            background-color: #fff;
-            box-shadow: 0 0 0 3px rgba(0, 115, 230, 0.1);
-        }
-        .search-icon {
-            position: absolute;
-            left: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #999;
-            font-size: 14px;
-        }
-
-        .nav-link-custom {
-            font-weight: 500;
-            color: var(--text-dark);
-            margin: 0 10px;
-            text-decoration: none;
-            font-size: 14px;
-        }
-        .nav-link-custom:hover {
-            color: var(--secondary-color);
-        }
-
-        .btn-login {
-            color: var(--primary-color);
-            border: 1px solid var(--primary-color);
-            background: transparent;
-            border-radius: 50px;
-            padding: 6px 20px;
-            font-weight: 600;
-            font-size: 14px;
-            transition: all 0.3s;
-            text-decoration: none;
-            display: inline-block;
-        }
-        .btn-login:hover {
-            background-color: rgba(28, 73, 128, 0.05);
-            color: var(--primary-color);
-        }
-
-        .btn-host {
-            background-color: var(--primary-color);
-            color: #fff;
-            border: 1px solid var(--primary-color);
-            border-radius: 50px;
-            padding: 6px 20px;
-            font-weight: 600;
-            font-size: 14px;
-            margin-left: 10px;
-            transition: all 0.3s;
-            text-decoration: none;
-            display: inline-block;
-        }
-        .btn-host:hover {
-            background-color: #163a66;
-            color: #fff;
-        }
-        
-        /* --- Hero Section --- */
-        .hero-section {
-            padding-top: 130px; /* Offset for navbar */
-            padding-bottom: 60px;
-            position: relative;
-        }
-        
-        .hero-title {
-            font-size: 3.2rem;
-            font-weight: 800;
-            line-height: 1.15;
-            color: var(--text-dark);
-            margin-bottom: 20px;
-        }
-        
-        .hero-title span {
-            color: var(--secondary-color);
-        }
-
-        .hero-subtitle {
-            font-size: 1.15rem;
-            color: var(--text-grey);
-            margin-bottom: 35px;
-            max-width: 500px;
-        }
-
-        .hero-stats {
-            display: flex;
-            gap: 30px;
-            margin-top: 30px;
-            border-left: 3px solid var(--accent-color);
-            padding-left: 20px;
-        }
-        .stat-item h4 {
-            font-weight: 700;
-            font-size: 1.5rem;
-            margin: 0;
-            color: var(--primary-color);
-        }
-        .stat-item p {
-            margin: 0;
-            font-size: 0.9rem;
-            color: var(--text-grey);
-        }
-
-        .hero-image-wrapper {
-            position: relative;
-            z-index: 1;
-        }
-        .hero-img {
-            width: 100%;
-            border-radius: 20px;
-            box-shadow: 20px 20px 0px rgba(28, 73, 128, 0.05); /* Offset shadow style */
-            transition: transform 0.4s ease;
-        }
-        .hero-img:hover {
-            transform: translateY(-5px);
-        }
-
-        /* --- Opportunity Cards --- */
-        .section-header {
-            margin-bottom: 40px;
-        }
-        .section-title {
-            font-weight: 700;
-            font-size: 2rem;
-            color: var(--text-dark);
-        }
-        .section-subtitle {
-            color: var(--text-grey);
-        }
-
-        .opp-card {
-            background: #fff;
-            border: 1px solid #eee;
-            border-radius: 16px;
-            padding: 25px;
-            height: 100%;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-            cursor: pointer;
-            text-decoration: none;
-            display: block;
-            color: inherit;
-        }
-        .opp-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-            border-color: transparent;
-        }
-        .opp-icon {
-            width: 60px;
-            height: 60px;
-            background-color: rgba(0, 115, 230, 0.1);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            color: var(--secondary-color);
-            margin-bottom: 20px;
-        }
-        .opp-title {
-            font-weight: 700;
-            font-size: 1.2rem;
-            margin-bottom: 10px;
-        }
-        .opp-desc {
-            color: var(--text-grey);
-            font-size: 0.9rem;
-            line-height: 1.5;
-        }
-
-        /* --- Footer --- */
-        .footer {
-            background-color: #fff;
-            padding: 60px 0 20px;
-            border-top: 1px solid #eaeaea;
-            margin-top: 80px;
-        }
-        .footer-logo {
-            font-weight: 800;
-            font-size: 24px;
-            color: var(--primary-color);
-            margin-bottom: 15px;
-            display: block;
-        }
-    </style>
-</head>
-<body>
-
-    <!-- Navbar -->
-    <nav class="unstop-navbar">
-        <div class="container d-flex justify-content-between align-items-center">
-            <div class="d-flex align-items-center gap-4">
-                <a href="{{ url_for('home') }}" class="navbar-brand-logo d-flex align-items-center gap-2">
-                    <div style="width: 40px; height: 40px; background: var(--primary-color); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 4px 10px rgba(28, 73, 128, 0.2);">
-                        <i class="bi bi-rocket-takeoff-fill" style="font-size: 20px;"></i>
-                    </div>
-                    <span>Anveshan</span>
-                </a>
-            </div>
-
-            <div class="d-flex align-items-center">
-                <!-- Navigation Links -->
-                <div class="d-none d-lg-flex align-items-center me-4">
-                    <a href="{{ url_for('find_team.find_team') }}" class="nav-link-custom">Find Team</a>
-                    <a href="{{ url_for('events.events') }}" class="nav-link-custom">Events</a>
-                    <a href="{{ url_for('collaboration.community') }}" class="nav-link-custom">Community</a>
-                </div>
-
-                <!-- Auth Buttons -->
-                {% if session.get('user_id') %}
-                    <a href="{{ url_for('student.dashboard') }}" class="btn-login">Dashboard</a>
-                    <a href="{{ url_for('auth.logout') }}" class="btn-host">Sign Out</a>
-                {% else %}
-                    <a href="{{ url_for('auth.login') }}" class="btn-login">Login</a>
-                    <a href="{{ url_for('auth.register') }}" class="btn-host">Register</a>
-                {% endif %}
-            </div>
-        </div>
-    </nav>
-
-    <!-- Hero Section -->
-    <section class="hero-section">
+    <section class="py-5" style="background: linear-gradient(135deg, #f3f4f6 0%, #ffffff 100%);">
         <div class="container">
-            <div class="row align-items-center">
-                <!-- Left Content -->
-                <div class="col-lg-6 mb-5 mb-lg-0">
-                    <h1 class="hero-title">
-                        Unlock Your <br>
-                        <span>Innovation Journey</span>
-                    </h1>
-                    <p class="hero-subtitle">
-                        Anveshan is the ultimate ecosystem for students, faculty, and clubs to collaborate, compete, and create impact. Join thousands of innovators today.
-                    </p>
-                    
-                    <div class="d-flex gap-3">
-                        {% if not session.get('user_id') %}
-                            <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg" style="border-radius: 50px; padding: 12px 35px; background-color: var(--secondary-color);">Get Started</a>
-                        {% else %}
-                            <a href="{{ url_for('student.dashboard') }}" class="btn btn-primary btn-lg" style="border-radius: 50px; padding: 12px 35px; background-color: var(--secondary-color);">Explore Dashboard</a>
-                        {% endif %}
-                        <a href="#opportunities" class="btn btn-outline-dark btn-lg" style="border-radius: 50px; padding: 12px 35px;">Browse</a>
-                    </div>
-
-
-                </div>
-
-                <!-- Right Image -->
+            <div class="row align-items-center g-4">
                 <div class="col-lg-6">
-                    <div class="hero-image-wrapper">
-                        <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80" 
-                             alt="Students collaborating on laptop" 
-                             class="hero-img">
+                    <h1 class="fw-bold" style="font-size: 2.5rem; letter-spacing: -0.02em;">
+                        Unlock Your Innovation Journey
+                    </h1>
+                    <p class="text-muted mb-4">
+                        Collaborate across students, faculty, and clubs. Discover events, form teams, and work on research and projects — all in one place.
+                    </p>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% if not session.get('user_id') %}
+                            <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg rounded-pill px-4">Get Started</a>
+                        {% else %}
+                            <a href="{{ dashboard_url }}" class="btn btn-primary btn-lg rounded-pill px-4">Explore Dashboard</a>
+                        {% endif %}
+                        <a href="#opportunities" class="btn btn-outline-secondary btn-lg rounded-pill px-4">Browse</a>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="card border-0 shadow-sm rounded-4">
+                        <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1200&q=80" alt="Collaboration" class="rounded-4" style="width: 100%; height: auto;">
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Opportunities Section -->
-    <section id="opportunities" style="padding: 60px 0; background-color: #fcfcfc;">
+    <section id="opportunities" class="py-5" style="background-color: #fcfcfc;">
         <div class="container">
-            <div class="section-header text-center">
-                <h2 class="section-title">Explore Opportunities</h2>
-                <p class="section-subtitle">Participate, Compete, and Grow with the best minds.</p>
+            <div class="text-center mb-4">
+                <h2 class="fw-bold">Explore Opportunities</h2>
+                <p class="text-muted">Participate, collaborate, and grow with the best minds.</p>
             </div>
 
             <div class="row g-4">
-                <!-- Card 1: Hackathons -->
                 <div class="col-md-4">
-                    <a href="{{ url_for('events.events') }}" class="opp-card">
-                        <div class="opp-icon" style="background-color: #e6f7ff; color: #0073e6;">
-                            <i class="bi bi-trophy"></i>
+                    <a href="{{ url_for('events.events') }}" class="text-decoration-none">
+                        <div class="card h-100 border-0 shadow-sm rounded-4">
+                            <div class="card-body p-4">
+                                <div class="rounded-circle bg-primary-subtle text-primary d-inline-flex align-items-center justify-content-center mb-3" style="width:56px;height:56px;">
+                                    <i class="bi bi-trophy fs-4"></i>
+                                </div>
+                                <h5 class="fw-bold text-dark mb-2">Hackathons</h5>
+                                <p class="text-muted mb-0">Compete, solve real problems, and win prizes.</p>
+                            </div>
                         </div>
-                        <h3 class="opp-title">Hackathons</h3>
-                        <p class="opp-desc">Participate in coding battles, solve real-world problems, and win exciting prizes.</p>
                     </a>
                 </div>
 
-                <!-- Card 2: Teams -->
                 <div class="col-md-4">
-                    <a href="{{ url_for('find_team.find_team') }}" class="opp-card">
-                        <div class="opp-icon" style="background-color: #fff7e6; color: #ff9f1c;">
-                            <i class="bi bi-people"></i>
+                    <a href="{{ url_for('find_team.find_team') }}" class="text-decoration-none">
+                        <div class="card h-100 border-0 shadow-sm rounded-4">
+                            <div class="card-body p-4">
+                                <div class="rounded-circle bg-warning-subtle text-warning d-inline-flex align-items-center justify-content-center mb-3" style="width:56px;height:56px;">
+                                    <i class="bi bi-people fs-4"></i>
+                                </div>
+                                <h5 class="fw-bold text-dark mb-2">Find Teams</h5>
+                                <p class="text-muted mb-0">Form teams for projects and competitions.</p>
+                            </div>
                         </div>
-                        <h3 class="opp-title">Find Teams</h3>
-                        <p class="opp-desc">Connect with like-minded peers to form teams for projects and competitions.</p>
                     </a>
                 </div>
 
-                <!-- Card 3: Research -->
                 <div class="col-md-4">
-                    <a href="{{ url_for('collaboration.community') }}" class="opp-card">
-                        <div class="opp-icon" style="background-color: #e6fffa; color: #00b386;">
-                            <i class="bi bi-lightbulb"></i>
+                    <a href="{{ url_for('collaboration.community') }}" class="text-decoration-none">
+                        <div class="card h-100 border-0 shadow-sm rounded-4">
+                            <div class="card-body p-4">
+                                <div class="rounded-circle bg-info-subtle text-info d-inline-flex align-items-center justify-content-center mb-3" style="width:56px;height:56px;">
+                                    <i class="bi bi-lightbulb fs-4"></i>
+                                </div>
+                                <h5 class="fw-bold text-dark mb-2">Faculty Collaboration</h5>
+                                <p class="text-muted mb-0">Work on research with mentors and experts.</p>
+                            </div>
                         </div>
-                        <h3 class="opp-title">Faculty Collaboration</h3>
-                        <p class="opp-desc">Work on cutting-edge research projects under the mentorship of expert faculty.</p>
                     </a>
                 </div>
                 
-                <!-- Card 4: Team Requests -->
                 <div class="col-md-4">
-                    <a href="{{ url_for('find_team.my_join_requests') }}" class="opp-card">
-                        <div class="opp-icon" style="background-color: #f3f9ff; color: #1C4980;">
-                            <i class="bi bi-envelope"></i>
+                    <a href="{{ url_for('find_team.my_join_requests') }}" class="text-decoration-none">
+                        <div class="card h-100 border-0 shadow-sm rounded-4">
+                            <div class="card-body p-4">
+                                <div class="rounded-circle bg-primary-subtle text-primary d-inline-flex align-items-center justify-content-center mb-3" style="width:56px;height:56px;">
+                                    <i class="bi bi-envelope fs-4"></i>
+                                </div>
+                                <h5 class="fw-bold text-dark mb-2">Team Requests</h5>
+                                <p class="text-muted mb-0">Track your team applications.</p>
+                            </div>
                         </div>
-                        <h3 class="opp-title">Team Requests</h3>
-                        <p class="opp-desc">Manage incoming and outgoing team requests for collaborations.</p>
                     </a>
                 </div>
 
-                <!-- Card 5: Projects -->
                 <div class="col-md-4">
-                    <a href="#" class="opp-card">
-                        <div class="opp-icon" style="background-color: #ffe6e6; color: #e60000;">
-                            <i class="bi bi-code-slash"></i>
+                    <div class="card h-100 border-0 shadow-sm rounded-4">
+                        <div class="card-body p-4">
+                            <div class="rounded-circle bg-danger-subtle text-danger d-inline-flex align-items-center justify-content-center mb-3" style="width:56px;height:56px;">
+                                <i class="bi bi-code-slash fs-4"></i>
+                            </div>
+                            <h5 class="fw-bold text-dark mb-2">Project Showcase</h5>
+                            <p class="text-muted mb-0">Share your builds and get feedback.</p>
                         </div>
-                        <h3 class="opp-title">Project Showcase</h3>
-                        <p class="opp-desc">Showcase your portfolio, get feedback, and inspire others with your builds.</p>
-                    </a>
+                    </div>
                 </div>
 
-                <!-- Card 6: Community -->
                 <div class="col-md-4">
-                    <a href="{{ url_for('collaboration.community') }}" class="opp-card">
-                        <div class="opp-icon" style="background-color: #e6ecff; color: #0033cc;">
-                            <i class="bi bi-chat-dots"></i>
+                    <a href="{{ url_for('collaboration.community') }}" class="text-decoration-none">
+                        <div class="card h-100 border-0 shadow-sm rounded-4">
+                            <div class="card-body p-4">
+                                <div class="rounded-circle bg-secondary-subtle text-secondary d-inline-flex align-items-center justify-content-center mb-3" style="width:56px;height:56px;">
+                                    <i class="bi bi-chat-dots fs-4"></i>
+                                </div>
+                                <h5 class="fw-bold text-dark mb-2">Community</h5>
+                                <p class="text-muted mb-0">Discuss, ask questions, and share knowledge.</p>
+                            </div>
                         </div>
-                        <h3 class="opp-title">Community</h3>
-                        <p class="opp-desc">Engage in discussions, ask questions, and share knowledge with the Anveshan community.</p>
                     </a>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- CTA Section -->
-    <section style="padding: 80px 0; background-color: var(--primary-color); color: white; margin-top: 60px;">
+    <section class="py-5" style="background-color: var(--primary-color); color: #fff;">
         <div class="container text-center">
-            <h2 style="font-weight: 800; margin-bottom: 20px;">Ready to start your journey?</h2>
-            <p style="opacity: 0.9; margin-bottom: 30px; font-size: 1.1rem;">Join the fastest growing community of student innovators today.</p>
+            <h2 class="fw-bold mb-2">Ready to start your journey?</h2>
+            <p class="mb-4">Join the fastest growing community of innovators today.</p>
             {% if not session.get('user_id') %}
-                <a href="{{ url_for('auth.register') }}" class="btn btn-light btn-lg" style="border-radius: 50px; padding: 12px 40px; color: var(--primary-color); font-weight: 700;">Register Now</a>
+                <a href="{{ url_for('auth.register') }}" class="btn btn-light btn-lg rounded-pill px-5" style="color: var(--primary-color);">Register Now</a>
             {% else %}
-                 <a href="{{ url_for('student.dashboard') }}" class="btn btn-light btn-lg" style="border-radius: 50px; padding: 12px 40px; color: var(--primary-color); font-weight: 700;">Go to Dashboard</a>
+                <a href="{{ dashboard_url }}" class="btn btn-light btn-lg rounded-pill px-5" style="color: var(--primary-color);">Go to Dashboard</a>
             {% endif %}
         </div>
     </section>
+{% endblock %}
 
-    <!-- Footer -->
-    <footer class="footer">
+{% block page_content_public %}
+    {% set dashboard_url = '#' %}
+    {% if session.get('role') == 'student' %}
+        {% set dashboard_url = url_for('student.dashboard') %}
+    {% elif session.get('role') == 'faculty' %}
+        {% set dashboard_url = url_for('collaboration.faculty_dashboard') %}
+    {% elif session.get('role') == 'club' %}
+        {% set dashboard_url = url_for('club.club_dashboard') %}
+    {% endif %}
+
+    <section class="py-5" style="background: linear-gradient(135deg, #f3f4f6 0%, #ffffff 100%);">
         <div class="container">
-            <div class="row">
-                <div class="col-lg-4 mb-4 mb-lg-0">
-                    <a href="#" class="footer-logo d-flex align-items-center gap-2 text-decoration-none">
-                        <div style="width: 32px; height: 32px; background: var(--primary-color); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white;">
-                            <i class="bi bi-rocket-takeoff-fill" style="font-size: 16px;"></i>
-                        </div>
-                        <span style="color: var(--primary-color);">Anveshan</span>
-                    </a>
-                    <p style="color: var(--text-grey); font-size: 0.9rem;">
-                        Empowering students to learn, compete, and collaborate. The one-stop platform for all your academic and co-curricular needs.
+            <div class="row align-items-center g-4">
+                <div class="col-lg-6">
+                    <h1 class="fw-bold" style="font-size: 2.5rem; letter-spacing: -0.02em;">
+                        Unlock Your Innovation Journey
+                    </h1>
+                    <p class="text-muted mb-4">
+                        Collaborate across students, faculty, and clubs. Discover events, form teams, and work on research and projects — all in one place.
                     </p>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% if not session.get('user_id') %}
+                            <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg rounded-pill px-4">Get Started</a>
+                        {% else %}
+                            <a href="{{ dashboard_url }}" class="btn btn-primary btn-lg rounded-pill px-4">Explore Dashboard</a>
+                        {% endif %}
+                        <a href="#opportunities" class="btn btn-outline-secondary btn-lg rounded-pill px-4">Browse</a>
+                    </div>
                 </div>
-                <div class="col-6 col-lg-2 mb-4">
-                    <h6 style="font-weight: 700; margin-bottom: 15px;">Platform</h6>
-                    <ul class="list-unstyled" style="font-size: 0.9rem;">
-                        <li class="mb-2"><a href="#" class="text-decoration-none text-secondary">Browse Opportunities</a></li>
-                        <li class="mb-2"><a href="#" class="text-decoration-none text-secondary">Events</a></li>
-                        <li class="mb-2"><a href="#" class="text-decoration-none text-secondary">Partners</a></li>
-                    </ul>
-                </div>
-                <div class="col-6 col-lg-2 mb-4">
-                    <h6 style="font-weight: 700; margin-bottom: 15px;">Support</h6>
-                    <ul class="list-unstyled" style="font-size: 0.9rem;">
-                        <li class="mb-2"><a href="#" class="text-decoration-none text-secondary">Help Center</a></li>
-                        <li class="mb-2"><a href="#" class="text-decoration-none text-secondary">Terms & Conditions</a></li>
-                        <li class="mb-2"><a href="#" class="text-decoration-none text-secondary">Privacy Policy</a></li>
-                    </ul>
-                </div>
-                <div class="col-lg-4">
-                    <h6 style="font-weight: 700; margin-bottom: 15px;">Connect with us</h6>
-                    <div class="d-flex gap-3">
-                        <a href="#" class="text-secondary fs-5"><i class="bi bi-instagram"></i></a>
-                        <a href="#" class="text-secondary fs-5"><i class="bi bi-linkedin"></i></a>
-                        <a href="#" class="text-secondary fs-5"><i class="bi bi-twitter-x"></i></a>
-                        <a href="#" class="text-secondary fs-5"><i class="bi bi-youtube"></i></a>
+                <div class="col-lg-6">
+                    <div class="card border-0 shadow-sm rounded-4">
+                        <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1200&q=80" alt="Collaboration" class="rounded-4" style="width: 100%; height: auto;">
                     </div>
                 </div>
             </div>
-            <div class="text-center mt-5 pt-4 border-top">
-                <p style="font-size: 0.85rem; color: #999;">&copy; {{ now.year if now else 2026 }} Anveshan. All rights reserved.</p>
+        </div>
+    </section>
+
+    <section id="opportunities" class="py-5" style="background-color: #fcfcfc;">
+        <div class="container">
+            <div class="text-center mb-4">
+                <h2 class="fw-bold">Explore Opportunities</h2>
+                <p class="text-muted">Participate, collaborate, and grow with the best minds.</p>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <a href="{{ url_for('events.events') }}" class="text-decoration-none">
+                        <div class="card h-100 border-0 shadow-sm rounded-4">
+                            <div class="card-body p-4">
+                                <div class="rounded-circle bg-primary-subtle text-primary d-inline-flex align-items-center justify-content-center mb-3" style="width:56px;height:56px;">
+                                    <i class="bi bi-trophy fs-4"></i>
+                                </div>
+                                <h5 class="fw-bold text-dark mb-2">Hackathons</h5>
+                                <p class="text-muted mb-0">Compete, solve real problems, and win prizes.</p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="col-md-4">
+                    <a href="{{ url_for('find_team.find_team') }}" class="text-decoration-none">
+                        <div class="card h-100 border-0 shadow-sm rounded-4">
+                            <div class="card-body p-4">
+                                <div class="rounded-circle bg-warning-subtle text-warning d-inline-flex align-items-center justify-content-center mb-3" style="width:56px;height:56px;">
+                                    <i class="bi bi-people fs-4"></i>
+                                </div>
+                                <h5 class="fw-bold text-dark mb-2">Find Teams</h5>
+                                <p class="text-muted mb-0">Form teams for projects and competitions.</p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="col-md-4">
+                    <a href="{{ url_for('collaboration.community') }}" class="text-decoration-none">
+                        <div class="card h-100 border-0 shadow-sm rounded-4">
+                            <div class="card-body p-4">
+                                <div class="rounded-circle bg-info-subtle text-info d-inline-flex align-items-center justify-content-center mb-3" style="width:56px;height:56px;">
+                                    <i class="bi bi-lightbulb fs-4"></i>
+                                </div>
+                                <h5 class="fw-bold text-dark mb-2">Faculty Collaboration</h5>
+                                <p class="text-muted mb-0">Work on research with mentors and experts.</p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                
+                <div class="col-md-4">
+                    <a href="{{ url_for('find_team.my_join_requests') }}" class="text-decoration-none">
+                        <div class="card h-100 border-0 shadow-sm rounded-4">
+                            <div class="card-body p-4">
+                                <div class="rounded-circle bg-primary-subtle text-primary d-inline-flex align-items-center justify-content-center mb-3" style="width:56px;height:56px;">
+                                    <i class="bi bi-envelope fs-4"></i>
+                                </div>
+                                <h5 class="fw-bold text-dark mb-2">Team Requests</h5>
+                                <p class="text-muted mb-0">Track your team applications.</p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card h-100 border-0 shadow-sm rounded-4">
+                        <div class="card-body p-4">
+                            <div class="rounded-circle bg-danger-subtle text-danger d-inline-flex align-items-center justify-content-center mb-3" style="width:56px;height:56px;">
+                                <i class="bi bi-code-slash fs-4"></i>
+                            </div>
+                            <h5 class="fw-bold text-dark mb-2">Project Showcase</h5>
+                            <p class="text-muted mb-0">Share your builds and get feedback.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <a href="{{ url_for('collaboration.community') }}" class="text-decoration-none">
+                        <div class="card h-100 border-0 shadow-sm rounded-4">
+                            <div class="card-body p-4">
+                                <div class="rounded-circle bg-secondary-subtle text-secondary d-inline-flex align-items-center justify-content-center mb-3" style="width:56px;height:56px;">
+                                    <i class="bi bi-chat-dots fs-4"></i>
+                                </div>
+                                <h5 class="fw-bold text-dark mb-2">Community</h5>
+                                <p class="text-muted mb-0">Discuss, ask questions, and share knowledge.</p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
             </div>
         </div>
-    </footer>
+    </section>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+    <section class="py-5" style="background-color: var(--primary-color); color: #fff;">
+        <div class="container text-center">
+            <h2 class="fw-bold mb-2">Ready to start your journey?</h2>
+            <p class="mb-4">Join the fastest growing community of innovators today.</p>
+            {% if not session.get('user_id') %}
+                <a href="{{ url_for('auth.register') }}" class="btn btn-light btn-lg rounded-pill px-5" style="color: var(--primary-color);">Register Now</a>
+            {% else %}
+                <a href="{{ dashboard_url }}" class="btn btn-light btn-lg rounded-pill px-5" style="color: var(--primary-color);">Go to Dashboard</a>
+            {% endif %}
+        </div>
+    </section>
+{% endblock %}

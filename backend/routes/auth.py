@@ -61,6 +61,11 @@ def login():
         )
         user = cursor.fetchone()
         
+        if not user:
+            flash(f"No account found with email '{email}'. Please register first.", "danger")
+            cursor.close()
+            return redirect(url_for('auth.login'))
+        
         # Verify password (hash or legacy plaintext)
         authenticated = False
         if user:
@@ -94,7 +99,7 @@ def login():
                 return redirect(url_for('collaboration.faculty_dashboard'))
             return redirect(url_for('student.dashboard'))
 
-        flash("Invalid email or password", "danger")
+        flash("Incorrect password. Please try again or reset it.", "danger")
         return redirect(url_for('auth.login'))
 
     return render_template('login.html')

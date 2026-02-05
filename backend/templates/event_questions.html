@@ -1,125 +1,89 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ event.title }} | Q&A</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/unstop_theme.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-</head>
-<body>
-    <div class="dashboard-container">
-        <div class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <a href="{{ url_for('student.dashboard') }}" class="logo-container">
-                    <div class="logo-icon">
-                        <i class="fas fa-search"></i>
-                    </div>
-                    <span class="logo-text">Anveshan</span>
-                </a>
-            </div>
-            {% if user %}
-            <div class="user-profile-sidebar">
-                <div style="width: 80px; height: 80px; background: #e0e0e0; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px auto; color: #666; font-size: 30px;">
-                    <i class="fas fa-user"></i>
-                </div>
-                <h4 style="margin: 0; font-size: 1.1rem;">{{ user.name or 'Student' }}</h4>
-                <p style="color: #666; font-size: 0.85rem;">{{ user.role|title }}</p>
-            </div>
-            {% endif %}
-            <ul class="sidebar-menu">
-                <li>
-                    <a href="{{ url_for('student.dashboard') }}" class="active">
-                        <i class="fas fa-th-large"></i> Dashboard
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url_for('auth.logout') }}">
-                        <i class="fas fa-sign-out-alt"></i> Logout
-                    </a>
-                </li>
-            </ul>
+{% extends "base.html" %}
+
+{% block title %}{{ event.title }} | Q&A{% endblock %}
+
+{% block page_content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">{{ event.title }} – Q&A</h2>
+            <p class="text-muted mb-0">Ask doubts and view organizer responses</p>
         </div>
+        <a href="{{ url_for('student.dashboard') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+        </a>
+    </div>
 
-        <div class="main-content">
-            <div style="margin-bottom: 24px; display: flex; align-items: center;">
-                <button class="toggle-sidebar-btn" onclick="toggleSidebar()">
-                    <i class="fas fa-bars"></i>
-                </button>
-                <div style="margin-left: 12px;">
-                    <h2 style="margin: 0;">{{ event.title }} – Q&A</h2>
-                    <p style="color: var(--text-muted); margin: 0;">Ask doubts and view organizer responses</p>
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Ask Question Form -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-3">Ask a Question</h5>
+                    <form method="POST" action="{{ url_for('events.submit_question') }}">
+                        <input type="hidden" name="event_id" value="{{ event.id }}">
+                        <div class="mb-3">
+                            <textarea name="question" class="form-control bg-light" rows="3" placeholder="Type your question here..." required></textarea>
+                        </div>
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-primary fw-medium">
+                                <i class="bi bi-send me-1"></i> Submit Question
+                            </button>
+                        </div>
+                    </form>
                 </div>
-                <a href="{{ url_for('student.dashboard') }}" class="btn-primary" style="margin-left: auto; text-decoration: none;">Back to Dashboard</a>
             </div>
 
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="card" style="padding:12px; margin-bottom:12px; border-left:4px solid {% if category=='success' %}#28a745{% elif category=='danger' %}#dc3545{% else %}#1C4980{% endif %};">
-                            <div style="color: var(--text-color);">{{ message }}</div>
+            <!-- Questions List -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+                    <h5 class="fw-bold mb-0">Recent Questions</h5>
+                </div>
+                <div class="card-body p-4">
+                    {% if questions and questions|length > 0 %}
+                        <div class="d-flex flex-column gap-3">
+                            {% for q in questions %}
+                                <div class="card border mb-0">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <small class="text-muted">Asked by: {{ q.student_email }}</small>
+                                            <span class="badge {{ 'bg-success-subtle text-success' if q.status == 'answered' else 'bg-warning-subtle text-warning' }}">
+                                                {{ q.status|title }}
+                                            </span>
+                                        </div>
+                                        <p class="fw-bold text-dark mb-2">{{ q.question }}</p>
+                                        
+                                        {% if q.answer %}
+                                            <div class="bg-light p-3 rounded-3 border-start border-4 border-primary">
+                                                <div class="d-flex gap-2">
+                                                    <i class="bi bi-reply-fill text-primary mt-1"></i>
+                                                    <div>
+                                                        <span class="fw-bold text-primary small d-block mb-1">Organizer Response:</span>
+                                                        <p class="mb-0 text-secondary">{{ q.answer }}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% else %}
+                                            <div class="text-muted small fst-italic">
+                                                <i class="bi bi-hourglass-split me-1"></i> Awaiting reply...
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
                         </div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-
-            <div class="card" style="max-width: 900px; margin: 0 auto 16px;">
-                <form method="POST" action="{{ url_for('events.submit_question') }}">
-                    <input type="hidden" name="event_id" value="{{ event.id }}">
-                    <div class="form-group">
-                        <label>Your Doubt</label>
-                        <textarea name="question" class="form-control" rows="3" placeholder="Type your question..." required></textarea>
-                    </div>
-                    <button type="submit" class="btn-primary" style="margin-top: 8px;">Submit Question</button>
-                </form>
-            </div>
-
-            <div class="card" style="max-width: 900px; margin: 0 auto;">
-                {% if questions and questions|length > 0 %}
-                    <div style="display: grid; grid-template-columns: 1fr; gap: 12px;">
-                        {% for q in questions %}
-                        <div class="card" style="margin-bottom: 0;">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                                <span style="font-size: 0.8rem; color: #666;">Asked by: {{ q.student_email }}</span>
-                                <span style="font-size: 0.8rem; color: {% if q.status == 'answered' %}#4CAF50{% else %}#FF9800{% endif %}; font-weight: bold;">{{ q.status|title }}</span>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <div class="mb-3">
+                                <i class="bi bi-chat-dots text-muted" style="font-size: 3rem;"></i>
                             </div>
-                            <p style="margin-bottom: 5px; font-weight: 600;">{{ q.question }}</p>
-                            {% if q.answer %}
-                            <div style="background: #f6f8ff; border-left: 4px solid #1C4980; padding: 10px; border-radius: 6px;">
-                                <p style="margin: 0; color: #334;">Answer: {{ q.answer }}</p>
-                            </div>
-                            {% else %}
-                            <p style="margin: 0; color: #888;">Awaiting reply from organizer</p>
-                            {% endif %}
+                            <h5 class="text-muted">No questions yet</h5>
+                            <p class="text-muted small">Be the first to ask a doubt about this event!</p>
                         </div>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <div style="text-align: center; padding: 30px;">
-                        <i class="far fa-comments fa-3x" style="color: #ccc; margin-bottom: 12px;"></i>
-                        <p style="color: #666;">No questions yet. Be the first to ask!</p>
-                    </div>
-                {% endif %}
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
-
-    <script>
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const container = document.querySelector('.dashboard-container');
-            sidebar.classList.toggle('collapsed');
-            container.classList.toggle('sidebar-collapsed');
-            const isCollapsed = sidebar.classList.contains('collapsed');
-            localStorage.setItem('sidebarCollapsed', isCollapsed);
-        }
-        document.addEventListener('DOMContentLoaded', () => {
-            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
-            if (isCollapsed) {
-                document.getElementById('sidebar').classList.add('collapsed');
-                document.querySelector('.dashboard-container').classList.add('sidebar-collapsed');
-            }
-        });
-    </script>
-</body>
-</html>
+</div>
+{% endblock %}

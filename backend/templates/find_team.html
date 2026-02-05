@@ -1,203 +1,150 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Find Team | Anveshan</title>
-    <script>
-        try {
-            if (localStorage.getItem('sidebarCollapsed') === 'true') {
-                document.documentElement.classList.add('sidebar-collapsed');
-            }
-            document.documentElement.classList.add('preload');
-        } catch (e) {}
-    </script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/unstop_theme.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-</head>
-<body>
+{% extends "base.html" %}
 
-    <div class="dashboard-container">
-        <!-- Sidebar -->
-        <div class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <a href="{{ url_for('student.dashboard') }}" class="logo-container">
-                    <div class="logo-icon">
-                        <i class="fas fa-search"></i>
-                    </div>
-                    <span class="logo-text">Anveshan</span>
-                </a>
-            </div>
-            
-            <div class="user-profile-sidebar">
-                <img src="{{ url_for('static', filename='uploads/profile_pics/' + (user.profile_photo if user.profile_photo else 'default.png')) }}" 
-                     alt="Profile" class="user-avatar-small"
-                     onerror="this.src='https://via.placeholder.com/150'">
-                <h4 style="margin: 0; font-size: 1.1rem;">{{ user.name or 'Student' }}</h4>
-                <p style="color: #666; font-size: 0.85rem;">{{ user.role|title }}</p>
-                <a href="{{ url_for('student.profile') }}" style="font-size: 0.8rem; color: var(--secondary-color);">Edit Profile</a>
-            </div>
+{% block title %}Find Team | Anveshan{% endblock %}
 
-            <ul class="sidebar-menu">
-                <li>
-                    <a href="{{ url_for('collaboration.faculty_dashboard') if user.role == 'faculty' else url_for('student.dashboard') }}">
-                        <i class="fas fa-th-large"></i> <span>Dashboard</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url_for('collaboration.community') }}">
-                        <i class="fas fa-users-cog"></i> <span>Community</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url_for('student.profile') }}">
-                        <i class="fas fa-user"></i> <span>My Profile</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url_for('find_team.find_team') }}" class="active">
-                        <i class="fas fa-users"></i> <span>Find Team</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url_for('find_team.my_join_requests') }}">
-                        <i class="fas fa-envelope"></i> <span>My Requests</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url_for('auth.logout') }}">
-                        <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
-                    </a>
-                </li>
-            </ul>
+{% block page_content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">Find a Team</h2>
+            <p class="text-muted mb-0">Create a request or join an existing team for hackathons and projects.</p>
         </div>
-
-        <!-- Main Content -->
-        <div class="main-content">
-            <div style="margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center;">
-                <div style="display: flex; align-items: center;">
-                    <button class="toggle-sidebar-btn" onclick="toggleSidebar()">
-                        <i class="fas fa-bars"></i>
-                    </button>
-                    <div>
-                        <h2 style="margin: 0;">Find a Team</h2>
-                        <p style="color: var(--text-muted); margin: 0;">Create a request or join an existing team.</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="dashboard-grid" style="display: grid; grid-template-columns: 1fr; gap: 30px;">
-                
-                <!-- CREATE TEAM REQUEST -->
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Create Team Request</h3>
-                    </div>
-                    <form method="POST">
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-                            <div>
-                                <label class="form-label">Your Name</label>
-                                <input type="text" name="name" class="form-control" placeholder="Your Name" required>
-                            </div>
-                            <div>
-                                <label class="form-label">Hackathon</label>
-                                <select name="event_id" class="form-control" required>
-                                    <option value="">Select Hackathon</option>
-                                    {% for e in events %}
-                                        <option value="{{ e.id }}">{{ e.title }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <div>
-                                <label class="form-label">Domain</label>
-                                <input type="text" name="domain" class="form-control" placeholder="e.g. AI, Web">
-                            </div>
-                            <div>
-                                <label class="form-label">Required Skills</label>
-                                <input type="text" name="required_skills" class="form-control" placeholder="e.g. Python, React, ML">
-                            </div>
-                            <div>
-                                <label class="form-label">Branch</label>
-                                <input type="text" name="branch" class="form-control" placeholder="Branch">
-                            </div>
-                            <div>
-                                <label class="form-label">Year</label>
-                                <input type="text" name="year" class="form-control" placeholder="Year">
-                            </div>
-                            <div>
-                                <label class="form-label">Required Team Size</label>
-                                <input type="number" name="required_size" class="form-control" placeholder="e.g. 3">
-                            </div>
-                        </div>
-                        <div style="margin-top: 20px;">
-                            <button type="submit" class="btn-apply" style="width: auto; padding: 10px 30px;">Save Team Request</button>
-                        </div>
-                    </form>
-                </div>
-
-                <!-- AVAILABLE TEAMS -->
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Available Team Requests</h3>
-                    </div>
-                    
-                    <div id="requestsContainer">
-                        {% if requests %}
-                            <div class="event-grid">
-                                {% for r in requests %}
-                                    <div class="event-card" style="height: auto;">
-                                        <div class="event-content">
-                                            <h4 class="event-title">{{ r.name }}</h4>
-                                            
-                                            <div class="event-meta">
-                                                <i class="fas fa-trophy"></i> {{ r.event_title }}
-                                            </div>
-                                            <div class="event-meta">
-                                                <i class="fas fa-laptop-code"></i> {{ r.domain }}
-                                            </div>
-                                            {% if r.required_skills %}
-                                            <div class="event-meta">
-                                                <i class="fas fa-tools"></i> {{ r.required_skills }}
-                                            </div>
-                                            {% endif %}
-                                            <div class="event-meta">
-                                                <i class="fas fa-university"></i> {{ r.branch }} ({{ r.year }})
-                                            </div>
-                                            <div class="event-meta">
-                                                <i class="fas fa-users"></i> Needed: {{ r.required_size }}
-                                            </div>
-
-                                            <a href="{{ url_for('find_team.join_team', request_id=r.id) }}" class="btn-apply" style="margin-top: 15px;">
-                                                Join Team
-                                            </a>
-                                        </div>
-                                    </div>
-                                {% endfor %}
-                            </div>
-                        {% else %}
-                            <div style="text-align: center; padding: 30px;">
-                                <p style="color: var(--text-muted);">No team requests available yet.</p>
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
-
-            </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('find_team.my_team_requests') }}" class="btn btn-outline-primary">
+                <i class="bi bi-inbox me-1"></i> Incoming Requests
+            </a>
+            <a href="{{ url_for('find_team.my_join_requests') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-send me-1"></i> Sent Requests
+            </a>
         </div>
     </div>
 
-    <script src="{{ url_for('static', filename='js/find_team.js') }}"></script>
-    <script>
-        function toggleSidebar() {
-            const htmlEl = document.documentElement;
-            htmlEl.classList.toggle('sidebar-collapsed');
-            const isCollapsed = htmlEl.classList.contains('sidebar-collapsed');
-            localStorage.setItem('sidebarCollapsed', isCollapsed);
-        }
+    <div class="row g-4">
+        <!-- CREATE TEAM REQUEST -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
+                    <h5 class="card-title fw-bold mb-0"><i class="bi bi-plus-circle me-2 text-primary"></i>Create Request</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label class="form-label small text-muted fw-bold">YOUR NAME</label>
+                            <input type="text" name="name" class="form-control" placeholder="e.g. John Doe" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small text-muted fw-bold">HACKATHON / EVENT</label>
+                            <select name="event_id" class="form-select" required>
+                                <option value="">Select Event</option>
+                                {% for e in events %}
+                                    <option value="{{ e.id }}">{{ e.title }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small text-muted fw-bold">DOMAIN</label>
+                            <input type="text" name="domain" class="form-control" placeholder="e.g. AI/ML, Web Dev">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small text-muted fw-bold">REQUIRED SKILLS</label>
+                            <input type="text" name="required_skills" class="form-control" placeholder="e.g. Python, React">
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label small text-muted fw-bold">BRANCH</label>
+                                <input type="text" name="branch" class="form-control" placeholder="e.g. CSE">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small text-muted fw-bold">YEAR</label>
+                                <input type="text" name="year" class="form-control" placeholder="e.g. 3rd">
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label small text-muted fw-bold">TEAM SIZE NEEDED</label>
+                            <input type="number" name="required_size" class="form-control" placeholder="e.g. 2" min="1" required>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                Post Request
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
 
-        document.addEventListener('DOMContentLoaded', () => {
-            setTimeout(() => { document.documentElement.classList.remove('preload'); }, 0);
-        });
-    </script>
-</body>
-</html>
+        <!-- AVAILABLE TEAMS -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white border-bottom-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
+                    <h5 class="card-title fw-bold mb-0"><i class="bi bi-people me-2 text-primary"></i>Available Teams</h5>
+                    <span class="badge bg-light text-dark border">{{ requests|length }} requests</span>
+                </div>
+                <div class="card-body">
+                    {% if requests %}
+                        <div class="row g-3">
+                            {% for r in requests %}
+                                <div class="col-md-6">
+                                    <div class="card h-100 border bg-light hover-shadow transition-all">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <h6 class="fw-bold text-dark mb-0">{{ r.name }}'s Team</h6>
+                                                <span class="badge bg-primary-subtle text-primary rounded-pill small">
+                                                    Need {{ r.required_size }}
+                                                </span>
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <div class="d-flex align-items-center text-muted small mb-1">
+                                                    <i class="bi bi-trophy me-2 text-warning"></i>
+                                                    <span class="text-truncate">{{ r.event_title }}</span>
+                                                </div>
+                                                <div class="d-flex align-items-center text-muted small mb-1">
+                                                    <i class="bi bi-laptop me-2"></i>
+                                                    <span>{{ r.domain }}</span>
+                                                </div>
+                                                {% if r.required_skills %}
+                                                <div class="d-flex align-items-center text-muted small mb-1">
+                                                    <i class="bi bi-tools me-2"></i>
+                                                    <span class="text-truncate">{{ r.required_skills }}</span>
+                                                </div>
+                                                {% endif %}
+                                                <div class="d-flex align-items-center text-muted small">
+                                                    <i class="bi bi-mortarboard me-2"></i>
+                                                    <span>{{ r.branch }} ({{ r.year }})</span>
+                                                </div>
+                                            </div>
+
+                                            <a href="{{ url_for('find_team.join_team', request_id=r.id) }}" class="btn btn-sm btn-outline-primary w-100">
+                                                Request to Join
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <div class="mb-3">
+                                <i class="bi bi-people text-muted" style="font-size: 3rem; opacity: 0.5;"></i>
+                            </div>
+                            <h5 class="text-muted">No active team requests</h5>
+                            <p class="text-muted small">Be the first to create a request for your team!</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .hover-shadow:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
+    }
+    .transition-all {
+        transition: all 0.3s ease;
+    }
+</style>
+{% endblock %}

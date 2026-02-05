@@ -1,215 +1,170 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create Hackathon | Anveshan</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/unstop_theme.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-</head>
-<body>
+{% extends "base.html" %}
 
-    <div class="dashboard-container">
-        <!-- Sidebar -->
-        <div class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <a href="{{ url_for('club.club_dashboard') }}" class="logo-container">
-                    <div class="logo-icon">
-                        <i class="fas fa-search"></i>
-                    </div>
-                    <span class="logo-text">Anveshan</span>
-                </a>
-            </div>
-            
-            <div class="user-profile-sidebar">
-                <div style="width: 80px; height: 80px; background: #e0e0e0; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px auto; color: #666; font-size: 30px;">
-                    <i class="fas fa-users"></i>
-                </div>
-                <h4 style="margin: 0; font-size: 1.1rem;">{{ user.name if user else 'Club Admin' }}</h4>
-                <p style="color: #666; font-size: 0.85rem;">Organizer</p>
-            </div>
+{% block title %}Create Hackathon | Anveshan{% endblock %}
 
-            <ul class="sidebar-menu">
-                <li>
-                    <a href="{{ url_for('club.club_dashboard') }}">
-                        <i class="fas fa-th-large"></i> Dashboard
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url_for('club.post_announcement_page') }}">
-                        <i class="fas fa-bullhorn"></i> Post Announcement
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url_for('club.club_questions') }}">
-                        <i class="fas fa-question-circle"></i> Inquiries
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url_for('auth.logout') }}">
-                        <i class="fas fa-sign-out-alt"></i> Logout
-                    </a>
-                </li>
-            </ul>
+{% block page_content %}
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 fw-bold text-dark mb-1">Create Hackathon</h1>
+            <p class="text-muted mb-0">Launch a new hackathon event for students.</p>
         </div>
+        <a href="{{ url_for('events.create_event') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-2"></i>Back to Events
+        </a>
+    </div>
 
-        <!-- Main Content -->
-        <div class="main-content">
-            <!-- Header -->
-            <div style="margin-bottom: 30px; display: flex; align-items: center;">
-                <button class="toggle-sidebar-btn" onclick="toggleSidebar()">
-                    <i class="fas fa-bars"></i>
-                </button>
-                <div>
-                    <h2 style="margin: 0;">Create Hackathon</h2>
-                    <p style="color: var(--text-muted); margin: 0;">Launch a new hackathon event.</p>
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow-lg border-0">
+                <div class="card-body p-4 p-md-5">
+                    <form action="{{ url_for('events.create_hackathon') }}" method="POST" enctype="multipart/form-data">
+                        
+                        <!-- Basic Details Section -->
+                        <h5 class="fw-bold text-primary mb-4 pb-2 border-bottom">
+                            <i class="bi bi-info-circle me-2"></i>Basic Details
+                        </h5>
+                        
+                        <div class="row g-4 mb-4">
+                            <div class="col-12">
+                                <label class="form-label fw-bold small text-secondary">HACKATHON TITLE</label>
+                                <input type="text" name="title" class="form-control form-control-lg" required placeholder="e.g., CodeSprint 2025">
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label fw-bold small text-secondary">TAGLINE / THEME</label>
+                                <input type="text" name="description" class="form-control" placeholder="e.g., Innovate for Future">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-secondary">START DATE</label>
+                                <input type="date" name="event_date" class="form-control" required>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-secondary">REGISTRATION DEADLINE</label>
+                                <input type="date" name="deadline" class="form-control" required>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-secondary">MODE</label>
+                                <select name="mode" class="form-select">
+                                    <option value="offline">Offline</option>
+                                    <option value="online">Online</option>
+                                    <option value="hybrid">Hybrid</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-secondary">VENUE (IF OFFLINE)</label>
+                                <input type="text" name="venue" class="form-control" placeholder="e.g., Auditorium">
+                            </div>
+                        </div>
+
+                        <!-- Team Settings -->
+                        <h5 class="fw-bold text-primary mb-4 pb-2 border-bottom mt-5">
+                            <i class="bi bi-people me-2"></i>Team Settings
+                        </h5>
+                        
+                        <div class="row g-4 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-secondary">MIN TEAM SIZE</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-person"></i></span>
+                                    <input type="number" name="min_team_size" class="form-control" value="1" min="1">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-secondary">MAX TEAM SIZE</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-people"></i></span>
+                                    <input type="number" name="max_team_size" class="form-control" value="4" min="1">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Domains -->
+                        <h5 class="fw-bold text-primary mb-4 pb-2 border-bottom mt-5">
+                            <i class="bi bi-laptop me-2"></i>Domains
+                        </h5>
+                        
+                        <div class="mb-4">
+                            <label class="form-label fw-bold small text-secondary mb-3">SELECT DOMAINS</label>
+                            <div class="row g-3">
+                                {% set domains = ['AI/ML', 'Web Dev', 'App Dev', 'Blockchain', 'IoT', 'Cybersecurity', 'Cloud', 'AR/VR', 'Open Innovation'] %}
+                                {% for domain in domains %}
+                                <div class="col-6 col-md-4 col-lg-3">
+                                    <div class="form-check card h-100 p-3 border hover-shadow" style="cursor: pointer;" onclick="this.querySelector('input').click()">
+                                        <input class="form-check-input" type="checkbox" name="domains[]" value="{{ domain }}" id="domain_{{ loop.index }}">
+                                        <label class="form-check-label w-100 stretched-link" for="domain_{{ loop.index }}" style="cursor: pointer;">
+                                            {{ domain }}
+                                        </label>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Additional Info -->
+                        <h5 class="fw-bold text-primary mb-4 pb-2 border-bottom mt-5">
+                            <i class="bi bi-megaphone me-2"></i>Additional Info
+                        </h5>
+                        
+                        <div class="row g-4 mb-4">
+                            <div class="col-12">
+                                <label class="form-label fw-bold small text-secondary">HACKATHON POSTER (OPTIONAL)</label>
+                                <input type="file" name="poster" accept="image/*" class="form-control">
+                                <div class="form-text">Recommended size: 1200x630px. Max 2MB.</div>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label fw-bold small text-secondary">EXTERNAL REGISTRATION LINK</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-link-45deg"></i></span>
+                                    <input type="url" name="external_registration_link" class="form-control" placeholder="https://registration-link.com">
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label fw-bold small text-secondary mb-3">TARGET YEARS</label>
+                                <div class="d-flex flex-wrap gap-3">
+                                    {% for year in ['1st', '2nd', '3rd', '4th'] %}
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="target_years[]" value="{{ year }}" id="year_{{ loop.index }}">
+                                        <label class="form-check-label" for="year_{{ loop.index }}">
+                                            {{ year }} Year
+                                        </label>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                <div class="form-text mt-2">
+                                    <i class="bi bi-info-circle me-1"></i>Leave all unchecked to make it open to all years.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit -->
+                        <div class="d-grid gap-2 mt-5">
+                            <button type="submit" class="btn btn-primary py-3 fw-bold shadow-sm">
+                                <i class="bi bi-rocket-takeoff me-2"></i>Create Hackathon
+                            </button>
+                        </div>
+
+                    </form>
                 </div>
-            </div>
-
-            <!-- Content -->
-            <div class="card" style="padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
-                <form action="{{ url_for('events.create_hackathon') }}" method="POST" enctype="multipart/form-data">
-                    
-                    <!-- Basic Details -->
-                    <div class="form-group" style="margin-bottom: 15px;">
-                        <label style="font-weight: 500; margin-bottom: 5px; display: block;">Hackathon Title</label>
-                        <input type="text" name="title" class="form-control" required placeholder="e.g., CodeSprint 2025" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
-                    </div>
-
-                    <div class="form-group" style="margin-bottom: 15px;">
-                        <label style="font-weight: 500; margin-bottom: 5px; display: block;">Tagline / Theme</label>
-                        <input type="text" name="description" class="form-control" placeholder="e.g., Innovate for Future" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
-                    </div>
-
-                    <div class="row" style="display: flex; gap: 20px; margin-bottom: 15px;">
-                        <div class="col-md-6" style="flex: 1;">
-                            <label style="font-weight: 500; margin-bottom: 5px; display: block;">Start Date</label>
-                            <input type="date" name="event_date" class="form-control" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
-                        </div>
-                        <div class="col-md-6" style="flex: 1;">
-                            <label style="font-weight: 500; margin-bottom: 5px; display: block;">Registration Deadline</label>
-                            <input type="date" name="deadline" class="form-control" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
-                        </div>
-                    </div>
-
-                    <div class="row" style="display: flex; gap: 20px; margin-bottom: 15px;">
-                        <div class="col-md-6" style="flex: 1;">
-                            <label style="font-weight: 500; margin-bottom: 5px; display: block;">Mode</label>
-                            <select name="mode" class="form-control" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
-                                <option value="offline">Offline</option>
-                                <option value="online">Online</option>
-                                <option value="hybrid">Hybrid</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6" style="flex: 1;">
-                            <label style="font-weight: 500; margin-bottom: 5px; display: block;">Venue (if offline)</label>
-                            <input type="text" name="venue" class="form-control" placeholder="e.g., Auditorium" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
-                        </div>
-                    </div>
-
-                    <!-- Team Settings -->
-                    <h4 style="margin-top: 30px; border-bottom: 1px solid #eee; padding-bottom: 10px; color: var(--primary-color);">Team Settings</h4>
-                    <div class="row" style="display: flex; gap: 20px; margin-bottom: 15px;">
-                        <div class="col-md-6" style="flex: 1;">
-                            <label style="font-weight: 500; margin-bottom: 5px; display: block;">Min Team Size</label>
-                            <input type="number" name="min_team_size" class="form-control" value="1" min="1" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
-                        </div>
-                        <div class="col-md-6" style="flex: 1;">
-                            <label style="font-weight: 500; margin-bottom: 5px; display: block;">Max Team Size</label>
-                            <input type="number" name="max_team_size" class="form-control" value="4" min="1" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
-                        </div>
-                    </div>
-
-                    <!-- Domains -->
-                    <h4 style="margin-top: 30px; border-bottom: 1px solid #eee; padding-bottom: 10px; color: var(--primary-color);">Domains</h4>
-                    <div class="form-group" style="margin-bottom: 15px;">
-                        <label style="font-weight: 500; margin-bottom: 10px; display: block;">Select Domains</label>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px;">
-                            <label><input type="checkbox" name="domains[]" value="AI/ML"> AI / ML</label>
-                            <label><input type="checkbox" name="domains[]" value="Web Dev"> Web Development</label>
-                            <label><input type="checkbox" name="domains[]" value="App Dev"> App Development</label>
-                            <label><input type="checkbox" name="domains[]" value="Blockchain"> Blockchain</label>
-                            <label><input type="checkbox" name="domains[]" value="IoT"> IoT</label>
-                            <label><input type="checkbox" name="domains[]" value="Cybersecurity"> Cybersecurity</label>
-                            <label><input type="checkbox" name="domains[]" value="Cloud"> Cloud Computing</label>
-                            <label><input type="checkbox" name="domains[]" value="AR/VR"> AR / VR</label>
-                            <label><input type="checkbox" name="domains[]" value="Open Innovation"> Open Innovation</label>
-                        </div>
-                    </div>
-
-                    <!-- Poster, Link & Audience -->
-                    <h4 style="margin-top: 30px; border-bottom: 1px solid #eee; padding-bottom: 10px; color: var(--primary-color);">Poster, Registration & Audience</h4>
-                    <div class="form-group" style="margin-bottom: 15px;">
-                        <label style="font-weight: 500; margin-bottom: 5px; display: block;">Hackathon Poster (optional)</label>
-                        <input type="file" name="poster" accept="image/*" class="form-control" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
-                    </div>
-
-                    <div class="form-group" style="margin-bottom: 15px;">
-                        <label style="font-weight: 500; margin-bottom: 5px; display: block;">External Registration Link</label>
-                        <input type="url" name="external_registration_link" class="form-control" placeholder="https://registration-link.com" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
-                    </div>
-
-                    <div class="form-group" style="margin-bottom: 10px;">
-                        <label style="font-weight: 500; margin-bottom: 5px; display: block;">Target Years</label>
-                        <div style="display: flex; flex-wrap: wrap; gap: 12px;">
-                            <label style="font-size: 0.9rem;">
-                                <input type="checkbox" name="target_years[]" value="1st"> 1st Year
-                            </label>
-                            <label style="font-size: 0.9rem;">
-                                <input type="checkbox" name="target_years[]" value="2nd"> 2nd Year
-                            </label>
-                            <label style="font-size: 0.9rem;">
-                                <input type="checkbox" name="target_years[]" value="3rd"> 3rd Year
-                            </label>
-                            <label style="font-size: 0.9rem;">
-                                <input type="checkbox" name="target_years[]" value="4th"> 4th Year
-                            </label>
-                        </div>
-                        <p style="margin-top: 6px; font-size: 0.8rem; color: var(--text-muted);">
-                            Leave all unchecked to send this hackathon to all years.
-                        </p>
-                    </div>
-
-                    <!-- Submit -->
-                    <div style="margin-top: 40px; text-align: center;">
-                        <button type="submit" class="btn btn-primary" style="background-color: var(--primary-color); color: white; border: none; padding: 12px 40px; font-size: 18px; border-radius: 5px; cursor: pointer;">
-                            Create Hackathon
-                        </button>
-                        <br>
-                        <a href="{{ url_for('events.create_event') }}" style="display: inline-block; margin-top: 15px; color: #666; text-decoration: none;">
-                            Cancel & Return to Events
-                        </a>
-                    </div>
-
-                </form>
             </div>
         </div>
     </div>
+</div>
 
-    <script>
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const container = document.querySelector('.dashboard-container');
-            
-            sidebar.classList.toggle('collapsed');
-            container.classList.toggle('sidebar-collapsed');
-            
-            // Save state to local storage
-            const isCollapsed = sidebar.classList.contains('collapsed');
-            localStorage.setItem('sidebarCollapsed', isCollapsed);
-        }
-
-        // Restore sidebar state on page load
-        document.addEventListener('DOMContentLoaded', () => {
-            const sidebar = document.getElementById('sidebar');
-            const container = document.querySelector('.dashboard-container');
-            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
-            
-            if (isCollapsed) {
-                sidebar.classList.add('collapsed');
-                container.classList.add('sidebar-collapsed');
-            }
-        });
-    </script>
-</body>
-</html>
+<style>
+    .hover-shadow:hover {
+        background-color: #f8f9fa;
+        border-color: var(--bs-primary) !important;
+    }
+    .form-check-input:checked + label {
+        color: var(--bs-primary);
+        font-weight: 600;
+    }
+</style>
+{% endblock %}

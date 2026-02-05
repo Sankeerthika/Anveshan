@@ -5,62 +5,236 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Anveshan{% endblock %}</title>
 
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/unstop_theme.css') }}">
-<!--
-    <style>
-        body {
-            background-color: #f8f9fa;
-        }
-        .btn-custom {
-            background-color: #0d6efd;
-            color: white;
-        }
-        .btn-custom:hover {
-            background-color: #0b5ed7;
-            color: white;
-        }
-        .card {
-            margin-bottom: 15px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-    </style>-->
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     
-
+    <!-- Custom Theme CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/unstop_theme.css') }}">
+    
+    {% block extra_css %}{% endblock %}
 </head>
 <body>
 
-<header style="padding:18px 0;">
-    <div class="container" style="display:flex; justify-content:space-between; align-items:center;">
-        <a href="{{ url_for('student.dashboard') }}" style="font-weight:700; color:#e7eefc; text-decoration:none; font-size:20px;">Anveshan</a>
-        <div style="display:flex; gap:12px; align-items:center;">
-            <a href="{{ url_for('student.dashboard') }}" class="btn secondary">Dashboard</a>
-            <a href="{{ url_for('collaboration.community') }}" class="btn secondary">Community</a>
-            <a href="{{ url_for('find_team.find_team') }}" class="btn secondary">Find Team</a>
-            <a href="{{ url_for('auth.logout') }}" class="btn secondary">Logout</a>
-        </div>
-    </div>
-</header>
+    {% if session.get('user_id') %}
+        <!-- LOGGED IN LAYOUT: SIDEBAR + HEADER -->
+        <div class="layout-wrapper">
+            
+            <!-- Sidebar -->
+            <aside class="sidebar" id="sidebar">
+                <a href="#" class="sidebar-brand">
+                    <i class="bi bi-rocket-takeoff-fill"></i>
+                    <span>Anveshan</span>
+                </a>
 
-<div class="container" style="margin-top:10px;">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-        {% for category, message in messages %}
-            <div class="alert alert-{{ 'danger' if category=='danger' else ('success' if category=='success' else ('warning' if category=='warning' else 'info')) }}" role="alert">
-                {{ message }}
+                <ul class="sidebar-menu">
+                    <!-- Dashboard Link based on Role -->
+                    <li>
+                        {% set dashboard_url = '#' %}
+                        {% if session.get('role') == 'student' %}
+                            {% set dashboard_url = url_for('student.dashboard') %}
+                        {% elif session.get('role') == 'faculty' %}
+                            {% set dashboard_url = url_for('collaboration.faculty_dashboard') %}
+                        {% elif session.get('role') == 'club' %}
+                            {% set dashboard_url = url_for('club.club_dashboard') %}
+                        {% endif %}
+                        
+                        <a href="{{ dashboard_url }}" class="sidebar-link {{ 'active' if 'dashboard' in request.endpoint else '' }}">
+                            <i class="bi bi-grid-fill"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+
+                    <!-- Events (Hidden for Faculty) -->
+                    {% if session.get('role') != 'faculty' and session.get('role') != 'club' %}
+                    <li>
+                        <a href="{{ url_for('events.events') }}" class="sidebar-link {{ 'active' if 'events' in request.endpoint else '' }}">
+                            <i class="bi bi-calendar-event-fill"></i>
+                            <span>Events</span>
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% if session.get('role') == 'club' %}
+                    <li>
+                        <a href="{{ url_for('club.post_announcement_page') }}" class="sidebar-link {{ 'active' if 'post_announcement' in request.endpoint else '' }}">
+                            <i class="bi bi-megaphone-fill"></i>
+                            <span>Post Announcement</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('club.club_questions') }}" class="sidebar-link {{ 'active' if 'club_questions' in request.endpoint else '' }}">
+                            <i class="bi bi-question-circle-fill"></i>
+                            <span>Inquiries</span>
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    <!-- Find Team -->
+                    {% if session.get('role') != 'club' %}
+                    <li>
+                        <a href="{{ url_for('find_team.find_team') }}" class="sidebar-link {{ 'active' if 'find_team' in request.endpoint else '' }}">
+                            <i class="bi bi-people-fill"></i>
+                            <span>Find Team</span>
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    <!-- Community -->
+                    {% if session.get('role') != 'club' %}
+                    <li>
+                        <a href="{{ url_for('collaboration.community') }}" class="sidebar-link {{ 'active' if 'community' in request.endpoint else '' }}">
+                            <i class="bi bi-globe-americas"></i>
+                            <span>Community</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    <!-- Profile -->
+                    {% if session.get('role') in ['student', 'faculty'] %}
+                    <li>
+                        {% set profile_url = '#' %}
+                        {% if session.get('role') == 'student' %}
+                            {% set profile_url = url_for('student.profile') %}
+                        {% elif session.get('role') == 'faculty' %}
+                            {% set profile_url = url_for('collaboration.faculty_profile') %}
+                        {% endif %}
+                        <a href="{{ profile_url }}" class="sidebar-link {{ 'active' if 'profile' in request.endpoint else '' }}">
+                            <i class="bi bi-person-circle"></i>
+                            <span>Profile</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+                
+                <!-- Logout at bottom -->
+                <div class="mt-auto px-4 pb-4">
+                    <a href="{{ url_for('auth.logout') }}" class="btn btn-danger w-100 d-flex align-items-center justify-content-center gap-2" style="border-radius: 12px; padding: 10px;">
+                        <i class="bi bi-box-arrow-right"></i> Logout
+                    </a>
+                </div>
+            </aside>
+
+            <!-- Main Wrapper -->
+            <div class="main-wrapper">
+                <!-- Top Header -->
+                <header class="top-header">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-list mobile-toggle" id="sidebarToggle"></i>
+                    </div>
+
+                    <div class="header-actions">
+                        <a href="#" class="icon-btn position-relative">
+                            <i class="bi bi-bell"></i>
+                            <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle">
+                                <span class="visually-hidden">New alerts</span>
+                            </span>
+                        </a>
+                        
+                        <div class="dropdown">
+                            <div class="user-profile" data-bs-toggle="dropdown">
+                                <img src="{{ url_for('static', filename='uploads/profile_pics/' + (user.profile_photo if user and user.profile_photo else 'default.png')) }}" alt="User">
+                                <div class="d-none d-md-block text-start ms-2">
+                                    <h6 class="mb-0 text-dark small fw-bold">{{ user.name if user else 'User' }}</h6>
+                                    <p class="mb-0 text-muted small" style="font-size: 11px;">{{ session.get('role')|title }}</p>
+                                </div>
+                                <i class="bi bi-chevron-down ms-2 small text-muted"></i>
+                            </div>
+                            <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg p-2" style="border-radius: 15px; margin-top: 10px;">
+                                <li><a class="dropdown-item rounded py-2" href="{{ profile_url }}"><i class="bi bi-person me-2"></i> My Profile</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item rounded py-2 text-danger" href="{{ url_for('auth.logout') }}"><i class="bi bi-box-arrow-right me-2"></i> Logout</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </header>
+
+                <!-- Page Content -->
+                <main class="content-container">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ 'danger' if category=='danger' else ('success' if category=='success' else ('warning' if category=='warning' else 'info')) }} alert-dismissible fade show border-0 shadow-sm" style="border-radius: 12px;" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+
+                    {% block page_content %}
+                        {% block content %}{% endblock %}
+                    {% endblock %}
+                </main>
             </div>
-        {% endfor %}
+        </div>
+    {% else %}
+        <!-- LOGGED OUT LAYOUT: TOP NAV (Clean & Modern) -->
+        <nav class="navbar navbar-expand-lg bg-white fixed-top shadow-sm" style="height: 80px;">
+            <div class="container">
+                <a class="navbar-brand d-flex align-items-center gap-2" href="{{ url_for('home') }}">
+                    <div style="background: var(--primary-color); width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white;">
+                        <i class="bi bi-rocket-takeoff-fill"></i>
+                    </div>
+                    <span class="fw-bold" style="color: var(--primary-color); font-size: 1.5rem;">Anveshan</span>
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ms-auto align-items-center">
+                        <li class="nav-item"><a class="nav-link fw-medium px-3" href="{{ url_for('find_team.find_team') }}">Find Team</a></li>
+                        <li class="nav-item"><a class="nav-link fw-medium px-3" href="{{ url_for('events.events') }}">Events</a></li>
+                        <li class="nav-item"><a class="nav-link fw-medium px-3" href="{{ url_for('collaboration.community') }}">Community</a></li>
+                        <li class="nav-item ms-2">
+                            <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary px-4 rounded-pill">Login</a>
+                        </li>
+                        <li class="nav-item ms-2">
+                            <a href="{{ url_for('auth.register') }}" class="btn btn-primary px-4 rounded-pill">Register</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <div style="padding-top: 100px;">
+            {% block page_content_public %}
+                <div class="container">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+                    
+                    {% block content_public %}{% endblock %}
+                </div>
+            {% endblock %}
+        </div>
     {% endif %}
-    {% endwith %}
-</div>
 
-<div class="container">
-    {% block content %}{% endblock %}
-</div>
-
-<!-- Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Sidebar Toggle Script
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggle = document.getElementById('sidebarToggle');
+            const sidebar = document.getElementById('sidebar');
+            if(toggle && sidebar) {
+                toggle.addEventListener('click', function() {
+                    sidebar.classList.toggle('show');
+                });
+            }
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
 </body>
 </html>

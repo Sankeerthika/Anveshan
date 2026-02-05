@@ -1,53 +1,101 @@
-<!doctype html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Registered Students</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/status_theme.css') }}">
-</head>
-<body>
+{% extends "base.html" %}
 
-<div class="container">
-    <h2 style="color:#e7eefc; text-align:center;">Registered Students</h2>
+{% block title %}Registered Students | Anveshan{% endblock %}
 
-    <div class="card" style="margin-top:16px; padding:18px;">
-        <form method="GET" style="display:flex; gap:8px; flex-wrap:wrap;">
-            <input name="year" placeholder="Year">
-            <input name="branch" placeholder="Branch">
-            <input name="domain" placeholder="Domain">
-            <button class="btn secondary" type="submit">Filter</button>
-            <a href="{{ url_for('club.download_registrations', hackathon_id=hackathon_id) }}" class="btn" style="margin-left:auto;">Download CSV</a>
-        </form>
+{% block page_content %}
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">Registered Students</h2>
+            <p class="text-muted mb-0">View and manage students registered for your event.</p>
+        </div>
+        <a href="{{ url_for('club.club_dashboard') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Dashboard
+        </a>
+    </div>
 
-        <div style="margin-top:14px; overflow:auto;">
-            <table style="width:100%; border-collapse:collapse;">
-                <thead>
-                    <tr style="color:#cfe6ff; text-align:left;">
-                        <th style="padding:8px;">Name</th>
-                        <th style="padding:8px;">Email</th>
-                        <th style="padding:8px;">Branch</th>
-                        <th style="padding:8px;">Year</th>
-                        <th style="padding:8px;">Domain</th>
-                        <th style="padding:8px;">Registered At</th>
-                    </tr>
-                </thead>
-                <tbody>
-                {% for s in students %}
-                    <tr style="border-top:1px solid rgba(255,255,255,0.03);">
-                        <td style="padding:8px;">{{ s.name }}</td>
-                        <td style="padding:8px;">{{ s.email }}</td>
-                        <td style="padding:8px;">{{ s.branch }}</td>
-                        <td style="padding:8px;">{{ s.year }}</td>
-                        <td style="padding:8px;">{{ s.domain }}</td>
-                        <td style="padding:8px;">{{ s.registered_at }}</td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
+    <!-- Filter & Actions Card -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body p-4">
+            <form method="GET" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label fw-bold small text-muted">YEAR</label>
+                    <input type="text" name="year" class="form-control" placeholder="e.g. 3rd" value="{{ request.args.get('year', '') }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold small text-muted">BRANCH</label>
+                    <input type="text" name="branch" class="form-control" placeholder="e.g. CSE" value="{{ request.args.get('branch', '') }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold small text-muted">DOMAIN</label>
+                    <input type="text" name="domain" class="form-control" placeholder="e.g. AI/ML" value="{{ request.args.get('domain', '') }}">
+                </div>
+                <div class="col-md-3">
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary flex-grow-1">
+                            <i class="bi bi-filter me-1"></i> Filter
+                        </button>
+                        <a href="{{ url_for('club.download_registrations', hackathon_id=hackathon_id) }}" class="btn btn-success" title="Download CSV">
+                            <i class="bi bi-download"></i>
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Registrations Table -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4 py-3">Name</th>
+                            <th class="py-3">Email</th>
+                            <th class="py-3">Branch</th>
+                            <th class="py-3">Year</th>
+                            <th class="py-3">Domain</th>
+                            <th class="pe-4 py-3 text-end">Registered At</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in students %}
+                            <tr>
+                                <td class="ps-4 fw-bold">{{ s.name }}</td>
+                                <td>
+                                    <a href="mailto:{{ s.email }}" class="text-decoration-none text-muted">
+                                        {{ s.email }}
+                                    </a>
+                                </td>
+                                <td><span class="badge bg-light text-dark border">{{ s.branch }}</span></td>
+                                <td>{{ s.year }}</td>
+                                <td>
+                                    {% if s.domain %}
+                                        <span class="badge bg-primary-subtle text-primary rounded-pill">{{ s.domain }}</span>
+                                    {% else %}
+                                        <span class="text-muted small">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="pe-4 text-end text-muted small">
+                                    {{ s.registered_at }}
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center py-5">
+                                    <div class="mb-3">
+                                        <i class="bi bi-people text-muted" style="font-size: 2.5rem; opacity: 0.5;"></i>
+                                    </div>
+                                    <h6 class="text-muted">No students found</h6>
+                                    <p class="text-muted small mb-0">Try adjusting your filters.</p>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
-
-</body>
-</html>
+{% endblock %}

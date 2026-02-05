@@ -1,223 +1,120 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register | {{ event.title }}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/unstop_theme.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-</head>
-<body>
-    <div class="dashboard-container">
-        <div class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <a href="{{ url_for('student.dashboard') }}" class="logo-container">
-                    <div class="logo-icon">
-                        <i class="fas fa-search"></i>
-                    </div>
-                    <span class="logo-text">Anveshan</span>
+{% extends "base.html" %}
+
+{% block title %}Register | {{ event.title }}{% endblock %}
+
+{% block page_content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="fw-bold mb-1">Register for Event</h2>
+                    <p class="text-muted mb-0">Fill in your details to participate.</p>
+                </div>
+                <a href="{{ url_for('student.dashboard') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i> Dashboard
                 </a>
             </div>
-            <div class="user-profile-sidebar">
-                <img src="{{ url_for('static', filename='uploads/profile_pics/' + (user.profile_photo if user.profile_photo else 'default.png')) }}" 
-                     alt="Profile" class="user-avatar-small"
-                     onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><rect width=%27100%27 height=%27100%27 fill=%27%23e0e0e0%27/><text x=%2750%27 y=%2755%27 font-size=%2712%27 text-anchor=%27middle%27 fill=%27%23666%27>Avatar</text></svg>'">
-                <h4 style="margin: 0; font-size: 1.1rem;">{{ user.name or 'Student' }}</h4>
-                <p style="color: #666; font-size: 0.85rem;">{{ user.role|title }}</p>
-                <a href="{{ url_for('student.profile') }}" style="font-size: 0.8rem; color: var(--secondary-color);">Edit Profile</a>
-            </div>
-            <ul class="sidebar-menu">
-                <li><a href="{{ url_for('student.dashboard') }}"><i class="fas fa-th-large"></i> Dashboard</a></li>
-                <li><a href="{{ url_for('collaboration.community') }}"><i class="fas fa-users-cog"></i> Community</a></li>
-                <li><a href="{{ url_for('student.profile') }}"><i class="fas fa-user"></i> My Profile</a></li>
-                <li><a href="{{ url_for('find_team.find_team') }}"><i class="fas fa-users"></i> Find Team</a></li>
-                <li><a href="{{ url_for('find_team.my_join_requests') }}"><i class="fas fa-envelope"></i> My Requests</a></li>
-                <li><a href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
-            </ul>
-        </div>
-        <div class="main-content">
-            <div class="header" style="margin-bottom: 30px; display: flex; align-items: center;">
-                <button class="toggle-sidebar-btn" onclick="toggleSidebar()">
-                    <i class="fas fa-bars"></i>
-                </button>
-                <div style="margin-left: 15px;">
-                    <h2 style="margin: 0;">Register for {{ event.title }}</h2>
-                    <p style="color: var(--text-muted); margin: 0;">Fill your details to participate.</p>
-                </div>
-                <a href="{{ url_for('student.dashboard') }}" class="btn-primary" style="margin-left: auto; text-decoration: none; display: inline-block; width: auto;">Back to Dashboard</a>
-            </div>
 
-            <div class="card" style="margin-bottom: 20px;">
-                <h3 class="card-title" style="margin-bottom: 10px;">Event Details</h3>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
-                    <div class="event-meta"><i class="fas fa-info-circle"></i> {{ event.event_type|title }}</div>
-                    <div class="event-meta"><i class="far fa-calendar-alt"></i> {{ event.event_date }}</div>
-                    <div class="event-meta"><i class="far fa-clock"></i> Deadline: {{ event.deadline }}</div>
-                    <div class="event-meta"><i class="fas fa-map-marker-alt"></i> {{ event.mode|title }} {% if event.venue %}({{ event.venue }}){% endif %}</div>
-                    <div class="event-meta"><i class="fas fa-user-tie"></i> {{ event.organizer or event.club_name }}</div>
-                </div>
-                {% if event.description %}
-                    <p style="margin-top:15px; color: var(--text-muted);">{{ event.description }}</p>
-                {% endif %}
-            </div>
-
-            <div class="card" style="max-width: 900px; margin: 0 auto;">
-                <h3 class="card-title">Registration Form</h3>
-                <form method="POST" action="{{ url_for('events.submit_registration') }}" enctype="multipart/form-data">
-                    <input type="hidden" name="event_id" value="{{ event_id }}">
-
-                    {% if event.event_type in ['hackathon', 'competition', 'ideathon'] %}
-                    <h4 style="margin-top: 10px;">Team Details</h4>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                        <div class="form-group">
-                            <label>Team Name</label>
-                            <input type="text" name="team_name" class="form-control" required>
+            <!-- Event Details Summary -->
+            <div class="card shadow-sm border-0 mb-4 bg-light">
+                <div class="card-body p-4">
+                    <h4 class="fw-bold text-primary mb-3">{{ event.title }}</h4>
+                    <div class="row g-3 small text-muted">
+                        <div class="col-sm-6 col-md-4">
+                            <i class="bi bi-tag me-2"></i>{{ event.event_type|title }}
                         </div>
-                        <div class="form-group">
-                            <label>Project Title / Idea</label>
-                            <input type="text" name="project_title" class="form-control" required>
+                        <div class="col-sm-6 col-md-4">
+                            <i class="bi bi-calendar3 me-2"></i>{{ event.event_date }}
+                        </div>
+                        <div class="col-sm-6 col-md-4">
+                            <i class="bi bi-clock me-2"></i>Deadline: {{ event.deadline }}
+                        </div>
+                        <div class="col-sm-6 col-md-4">
+                            <i class="bi bi-geo-alt me-2"></i>{{ event.mode|title }} {% if event.venue %}({{ event.venue }}){% endif %}
+                        </div>
+                        <div class="col-sm-6 col-md-8">
+                            <i class="bi bi-person-badge me-2"></i>Organizer: {{ event.organizer or event.club_name }}
                         </div>
                     </div>
-                    <div class="form-group">
-                        <label>Domain</label>
-                        <select name="domain" class="form-control">
-                            <option value="">Select Domain (Optional)</option>
-                            <option>AI / ML</option>
-                            <option>Web Development</option>
-                            <option>App Development</option>
-                            <option>Blockchain</option>
-                            <option>IoT</option>
-                            <option>Cyber Security</option>
-                            <option>Other</option>
-                        </select>
-                    </div>
+                    {% if event.description %}
+                        <hr class="my-3 opacity-25">
+                        <p class="mb-0 text-dark">{{ event.description }}</p>
                     {% endif %}
+                </div>
+            </div>
 
-                    <h4 style="margin-top: 20px;">Participant / Team Lead Details</h4>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                        <div class="form-group">
-                            <label>Full Name</label>
-                            <input type="text" name="lead_name" class="form-control" required>
-                        </div>
-                        <div class="form-group">
-                        <label>Email</label>
-                        <input type="email" name="lead_email" class="form-control" required placeholder="College Email (e.g. name@anurag.edu.in)">
-                        </div>
-                    </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                        <div class="form-group">
-                            <label>Phone Number</label>
-                            <input type="text" name="lead_phone" class="form-control" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Year</label>
-                            <select name="lead_year" class="form-control" required>
-                                <option value="">Select Year</option>
-                                <option>1st</option>
-                                <option>2nd</option>
-                                <option>3rd</option>
-                                <option>4th</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                        <div class="form-group">
-                            <label>Branch</label>
-                            <select name="lead_branch" class="form-control" required>
-                                <option value="">Select Branch</option>
-                                <option>CSE</option>
-                                <option>ECE</option>
-                                <option>EEE</option>
-                                <option>MECH</option>
-                                <option>CIVIL</option>
-                                <option>IT</option>
-                                <option>AI&DS</option>
-                                <option>Other</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Section</label>
-                            <input type="text" name="lead_section" class="form-control" required placeholder="e.g. A, B, C, D, E...">
-                        </div>
-                    </div>
+            <!-- Registration Form -->
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white border-bottom-0 pt-4 px-4 pb-0">
+                    <h5 class="fw-bold mb-0">Registration Form</h5>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" action="{{ url_for('events.submit_registration') }}" enctype="multipart/form-data">
+                        <input type="hidden" name="event_id" value="{{ event_id }}">
 
-                    {% if event.event_type in ['hackathon', 'competition', 'ideathon'] %}
-                    <h4 style="margin-top: 20px;">Team Members (Optional)</h4>
-                    <p style="font-size:14px; color: var(--text-muted);">Add details for up to 4 team members.</p>
-                    {% for i in range(1, 5) %}
-                    <div class="card" style="margin-bottom: 15px;">
-                        <h4 style="margin: 0 0 10px 0;">Member {{ i }}</h4>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                            <div class="form-group">
-                                <label>Name</label>
-                                <input type="text" name="member_name[]" class="form-control">
+                        {% if event.event_type in ['hackathon', 'competition', 'ideathon'] %}
+                            <h6 class="fw-bold text-primary mb-3 border-bottom pb-2">Team Details</h6>
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small text-muted">TEAM NAME *</label>
+                                    <input type="text" name="team_name" class="form-control" required placeholder="e.g. The Innovators">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small text-muted">PROJECT TITLE / IDEA *</label>
+                                    <input type="text" name="project_title" class="form-control" required placeholder="e.g. Smart City Solution">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-bold small text-muted">DOMAIN</label>
+                                    <select name="domain" class="form-select">
+                                        <option value="">Select Domain (Optional)</option>
+                                        <option>AI / ML</option>
+                                        <option>Web Development</option>
+                                        <option>App Development</option>
+                                        <option>Blockchain</option>
+                                        <option>IoT</option>
+                                        <option>Cyber Security</option>
+                                        <option>Other</option>
+                                    </select>
+                                </div>
                             </div>
-                            <div class="form-group">
-                                <label>Email</label>
-                                <input type="email" name="member_email[]" class="form-control">
-                            </div>
-                        </div>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
-                            <div class="form-group">
-                                <label>Year</label>
-                                <select name="member_year[]" class="form-control">
-                                    <option value="">Select Year</option>
-                                    <option>1st</option>
-                                    <option>2nd</option>
-                                    <option>3rd</option>
-                                    <option>4th</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Branch</label>
-                                <select name="member_branch[]" class="form-control">
-                                    <option value="">Select Branch</option>
-                                    <option>CSE</option>
-                                    <option>ECE</option>
-                                    <option>EEE</option>
-                                    <option>MECH</option>
-                                    <option>CIVIL</option>
-                                    <option>IT</option>
-                                    <option>AI&DS</option>
-                                    <option>Other</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Section</label>
-                                <input type="text" name="member_section[]" class="form-control" placeholder="e.g. A, B, C, D, E...">
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                    {% endif %}
+                        {% endif %}
 
-                    <h4 style="margin-top: 20px;">Payment & Confirmation</h4>
-                    <div class="form-group">
-                        <label>Upload Payment Screenshot (if applicable)</label>
-                        <input type="file" name="payment_screenshot" class="form-control">
-                    </div>
-                    <button type="submit" class="btn-primary" style="margin-top: 20px;">Confirm Registration</button>
-                </form>
+                        <h6 class="fw-bold text-primary mb-3 border-bottom pb-2">Participant Details</h6>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-muted">FULL NAME *</label>
+                                <input type="text" name="lead_name" class="form-control" required value="{{ user.name if user else '' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-muted">EMAIL ADDRESS *</label>
+                                <input type="email" name="lead_email" class="form-control" required value="{{ user.email if user else '' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-muted">CONTACT NUMBER *</label>
+                                <input type="tel" name="lead_phone" class="form-control" required placeholder="+91 XXXXX XXXXX">
+                            </div>
+                            
+                            {% if event.event_type in ['hackathon', 'competition', 'ideathon'] %}
+                                <div class="col-12">
+                                    <label class="form-label fw-bold small text-muted">TEAM MEMBERS (Names & Emails)</label>
+                                    <textarea name="team_members" class="form-control" rows="3" placeholder="John Doe (john@example.com), Jane Smith (jane@example.com)"></textarea>
+                                    <div class="form-text">List all other team members here.</div>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary py-2 fw-bold">
+                                Confirm Registration
+                            </button>
+                            <a href="{{ url_for('student.dashboard') }}" class="btn btn-light text-muted">Cancel</a>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
-
-    <script>
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const container = document.querySelector('.dashboard-container');
-            sidebar.classList.toggle('collapsed');
-            container.classList.toggle('sidebar-collapsed');
-            const isCollapsed = sidebar.classList.contains('collapsed');
-            localStorage.setItem('sidebarCollapsed', isCollapsed);
-        }
-        document.addEventListener('DOMContentLoaded', () => {
-            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
-            if (isCollapsed) {
-                document.getElementById('sidebar').classList.add('collapsed');
-                document.querySelector('.dashboard-container').classList.add('sidebar-collapsed');
-            }
-        });
-    </script>
-</body>
-</html>
+</div>
+{% endblock %}

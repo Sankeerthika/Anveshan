@@ -1,237 +1,140 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Faculty Dashboard | Anveshan</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/unstop_theme.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-</head>
-<body>
-    <div class="dashboard-container">
-        <div class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <a href="{{ url_for('collaboration.faculty_dashboard') }}" class="logo-container">
-                    <div class="logo-icon">
-                        <i class="fas fa-search"></i>
-                    </div>
-                    <span class="logo-text">Anveshan</span>
-                </a>
-            </div>
-            <div class="user-profile-sidebar">
-                <img src="{{ url_for('static', filename='uploads/profile_pics/' + (user.profile_photo if user.profile_photo else 'default.png')) }}" 
-                     alt="Profile" class="user-avatar-small"
-                     onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><rect width=%27100%27 height=%27100%27 fill=%27%23e0e0e0%27/><text x=%2750%27 y=%2755%27 font-size=%2712%27 text-anchor=%27middle%27 fill=%27%23666%27>Avatar</text></svg>'">
-                <h4 style="margin: 0; font-size: 1.1rem;">{{ user.name or 'Faculty' }}</h4>
-                <p style="color: #666; font-size: 0.85rem;">{{ user.role|title }}</p>
-                <a href="{{ url_for('collaboration.faculty_profile') }}" style="font-size: 0.8rem; color: var(--secondary-color);">Edit Profile</a>
-            </div>
-            <ul class="sidebar-menu">
-                <li>
-                    <a href="{{ url_for('collaboration.faculty_dashboard') }}" class="active">
-                        <i class="fas fa-th-large"></i> Dashboard
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url_for('collaboration.community') }}">
-                        <i class="fas fa-users-cog"></i> Community
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url_for('collaboration.faculty_profile') }}">
-                        <i class="fas fa-user"></i> My Profile
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url_for('auth.logout') }}">
-                        <i class="fas fa-sign-out-alt"></i> Logout
-                    </a>
-                </li>
-            </ul>
+{% extends "base.html" %}
+{% block title %}Faculty Dashboard | Anveshan{% endblock %}
+{% block page_content %}
+<div class="container py-5">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 fw-bold text-dark">Faculty Dashboard</h1>
+            <p class="text-muted mb-0">Manage collaborations and review requests.</p>
         </div>
-
-        <div class="main-content">
-            <div style="margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center;">
-                <div style="display: flex; align-items: center;">
-                    <button class="toggle-sidebar-btn" onclick="toggleSidebar()">
-                        <i class="fas fa-bars"></i>
-                    </button>
-                    <div style="margin-left: 15px;">
-                        <h2 style="margin: 0;">Faculty Dashboard</h2>
-                        <p style="color: var(--text-muted); margin: 0;">Manage collaborations and review requests.</p>
-                    </div>
-                </div>
-                <a href="{{ url_for('collaboration.create_faculty_collaboration') }}" class="action-btn">
-                    <i class="fas fa-plus"></i> New Collaboration
-                </a>
-            </div>
-
-            {% if requests %}
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title"><i class="fas fa-bell" style="color: #e67e22;"></i> Incoming Requests</h3>
-                </div>
-                <div style="display: grid; gap: 15px;">
-                    {% for req in requests %}
-                    <div class="event-card" style="padding: 15px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <div>
-                                <strong style="color: #3498db;">{{ req.collab_title }}</strong>
-                                <p style="margin: 5px 0;">
-                                    {% if req.message and 'Invitation from owner' in req.message %}
-                                        <strong>{{ req.user_name }}</strong> ({{ req.user_role|title }}) was invited by owner.
-                                    {% else %}
-                                        <strong>{{ req.user_name }}</strong> ({{ req.user_role|title }}) wants to join.
-                                    {% endif %}
-                                </p>
-                                <p style="margin: 0; color: #666; font-size: 0.9rem;">"{{ req.message }}"</p>
-                            </div>
-                            <a href="{{ url_for('collaboration.faculty_collaboration_details', collab_id=req.collaboration_id) }}" class="btn-secondary">View</a>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endif %}
-
-            {% if my_invites %}
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title"><i class="fas fa-envelope-open" style="color: #3498db;"></i> Your Invitations</h3>
-                </div>
-                <div style="display: grid; gap: 15px;">
-                    {% for inv in my_invites %}
-                    <div class="event-card" style="padding: 15px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <div>
-                                <strong style="color: #3498db;">{{ inv.collab_title }}</strong>
-                                <p style="margin: 5px 0;">
-                                    {% if inv.message and 'Invitation from owner' in inv.message %}
-                                        You were invited by the owner.
-                                    {% else %}
-                                        Pending request.
-                                    {% endif %}
-                                </p>
-                                <p style="margin: 0; color: #666; font-size: 0.9rem;">"{{ inv.message }}"</p>
-                            </div>
-                            <div style="display:flex; gap:8px; align-items:center;">
-                                <a href="{{ url_for('collaboration.faculty_collaboration_details', collab_id=inv.collaboration_id) }}" class="btn-secondary">View</a>
-                                <form action="{{ url_for('collaboration.respond_invitation', req_id=inv.id, action='accepted') }}" method="POST">
-                                    <button type="submit" class="btn-secondary" style="background:#e8f6fd; color:#3498db;">Accept</button>
-                                </form>
-                                <form action="{{ url_for('collaboration.respond_invitation', req_id=inv.id, action='rejected') }}" method="POST">
-                                    <button type="submit" class="btn-secondary" style="background:#e74c3c; color:#fff;">Reject</button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endif %}
-
-            {% if my_participations %}
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title"><i class="fas fa-handshake" style="color:#1C4980;"></i> Participating Collaborations</h3>
-                </div>
-                <div class="event-grid">
-                    {% for collab in my_participations %}
-                    <div class="event-card" style="height: auto;">
-                        <div class="event-content">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                                <span style="background: #e8f6fd; color: #3498db; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 500;">
-                                    {{ collab.collaboration_type|title }}
-                                </span>
-                                <span style="color: #666; font-size: 0.8rem;">{{ collab.created_at.strftime('%Y-%m-%d') }}</span>
-                            </div>
-                            <h4 class="event-title">
-                                <a href="{{ url_for('collaboration.faculty_collaboration_details', collab_id=collab.id) }}" style="color: var(--text-color); text-decoration: none;">
-                                    {{ collab.title }}
-                                </a>
-                            </h4>
-                            <p class="event-meta">{{ collab.audience|replace('_', ' ')|title }}</p>
-                            <a href="{{ url_for('collaboration.faculty_collaboration_details', collab_id=collab.id) }}" class="btn-secondary">Open</a>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endif %}
-
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title"><i class="fas fa-briefcase" style="color: #3498db;"></i> Active Collaborations</h3>
-                </div>
-                {% if active_collabs %}
-                <div class="event-grid">
-                    {% for collab in active_collabs %}
-                    <div class="event-card" style="height: auto;">
-                        <div class="event-content">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                                <span style="background: #e8f6fd; color: #3498db; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 500;">
-                                    {{ collab.collaboration_type|title }}
-                                </span>
-                                <span style="color: #666; font-size: 0.8rem;">{{ collab.created_at.strftime('%Y-%m-%d') }}</span>
-                            </div>
-                            <h4 class="event-title">
-                                <a href="{{ url_for('collaboration.faculty_collaboration_details', collab_id=collab.id) }}" style="color: var(--text-color); text-decoration: none;">
-                                    {{ collab.title }}
-                                </a>
-                            </h4>
-                            <p class="event-meta">{{ collab.audience|replace('_', ' ')|title }}</p>
-                            <a href="{{ url_for('collaboration.faculty_collaboration_details', collab_id=collab.id) }}" class="btn-secondary">Manage</a>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% else %}
-                    <p style="color: var(--text-muted); text-align: center; padding: 20px;">No active collaborations. Create one to get started!</p>
-                {% endif %}
-            </div>
-
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title"><i class="fas fa-file-alt"></i> Published / Closed</h3>
-                </div>
-                {% if closed_collabs %}
-                <div class="event-grid">
-                    {% for collab in closed_collabs %}
-                    <div class="event-card" style="height: auto;">
-                        <div class="event-content">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                                <span style="background: #fee2e2; color: #e74c3c; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 500;">Closed</span>
-                                <span style="color: #666; font-size: 0.8rem;">{{ collab.created_at.strftime('%Y-%m-%d') }}</span>
-                            </div>
-                            <h4 class="event-title">{{ collab.title }}</h4>
-                            <p class="event-meta">{{ collab.audience|replace('_', ' ')|title }}</p>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% else %}
-                    <p style="color: var(--text-muted); text-align: center; padding: 20px;">No published or closed collaborations yet.</p>
-                {% endif %}
-            </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('collaboration.create_faculty_collaboration') }}" class="btn btn-primary">
+                <i class="bi bi-plus-lg me-2"></i>New Collaboration
+            </a>
+            <a href="{{ url_for('collaboration.community') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-people me-2"></i>Community
+            </a>
         </div>
     </div>
 
-    <script>
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const container = document.querySelector('.dashboard-container');
-            sidebar.classList.toggle('collapsed');
-            container.classList.toggle('sidebar-collapsed');
-            const isCollapsed = sidebar.classList.contains('collapsed');
-            localStorage.setItem('sidebarCollapsed', isCollapsed);
-        }
-        document.addEventListener('DOMContentLoaded', () => {
-            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
-            if (isCollapsed) {
-                document.getElementById('sidebar').classList.add('collapsed');
-                document.querySelector('.dashboard-container').classList.add('sidebar-collapsed');
-            }
-        });
-    </script>
-</body>
-</html>
+    <div class="row g-4">
+        <!-- Incoming Requests -->
+        <div class="col-lg-6">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-header bg-white border-bottom-0 pt-4 px-4 pb-0">
+                    <h5 class="card-title fw-bold mb-0 text-warning">
+                        <i class="bi bi-bell-fill me-2"></i>Incoming Requests
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    {% if requests %}
+                        <div class="d-flex flex-column gap-3">
+                            {% for req in requests %}
+                                <div class="p-3 border rounded bg-light">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h6 class="fw-bold text-primary mb-0">{{ req.collab_title }}</h6>
+                                        <a href="{{ url_for('collaboration.faculty_collaboration_details', collab_id=req.collaboration_id) }}" class="btn btn-sm btn-outline-primary">View</a>
+                                    </div>
+                                    <p class="small mb-2">
+                                        {% if req.message and 'Invitation from owner' in req.message %}
+                                            <strong>{{ req.user_name }}</strong> ({{ req.user_role|title }}) was invited.
+                                        {% else %}
+                                            <strong>{{ req.user_name }}</strong> ({{ req.user_role|title }}) wants to join.
+                                        {% endif %}
+                                    </p>
+                                    <p class="text-muted small fst-italic mb-0">"{{ req.message }}"</p>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <p class="text-muted mb-0">No incoming requests.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Your Invitations -->
+        <div class="col-lg-6">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-header bg-white border-bottom-0 pt-4 px-4 pb-0">
+                    <h5 class="card-title fw-bold mb-0 text-primary">
+                        <i class="bi bi-envelope-open-fill me-2"></i>Your Invitations
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    {% if my_invites %}
+                        <div class="d-flex flex-column gap-3">
+                            {% for inv in my_invites %}
+                                <div class="p-3 border rounded bg-light">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h6 class="fw-bold text-primary mb-0">{{ inv.collab_title }}</h6>
+                                        <div class="d-flex gap-1">
+                                            <form action="{{ url_for('collaboration.respond_collaboration_request', request_id=inv.id, action='accept') }}" method="POST" class="d-inline">
+                                                <button type="submit" class="btn btn-sm btn-success"><i class="bi bi-check-lg"></i></button>
+                                            </form>
+                                            <form action="{{ url_for('collaboration.respond_collaboration_request', request_id=inv.id, action='reject') }}" method="POST" class="d-inline">
+                                                <button type="submit" class="btn btn-sm btn-danger"><i class="bi bi-x-lg"></i></button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                    <p class="small mb-0">
+                                        Invited by <strong>{{ inv.owner_name }}</strong>
+                                    </p>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <p class="text-muted mb-0">No pending invitations.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- My Collaborations -->
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white border-bottom-0 pt-4 px-4 pb-0">
+                    <h5 class="card-title fw-bold mb-0">My Collaborations</h5>
+                </div>
+                <div class="card-body p-4">
+                    {% if my_collaborations %}
+                        <div class="row g-4">
+                            {% for col in my_collaborations %}
+                                <div class="col-md-6 col-lg-4">
+                                    <div class="card h-100 border hover-shadow transition-all">
+                                        <div class="card-body">
+                                            <h5 class="card-title fw-bold text-dark">{{ col.title }}</h5>
+                                            <p class="text-muted small mb-3">{{ col.created_at.strftime('%b %d, %Y') }}</p>
+                                            <p class="card-text text-secondary small text-truncate">{{ col.description }}</p>
+                                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                                <span class="badge bg-primary-subtle text-primary rounded-pill">{{ col.status|title }}</span>
+                                                <a href="{{ url_for('collaboration.faculty_collaboration_details', collab_id=col.id) }}" class="btn btn-sm btn-outline-primary">Manage</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <div class="mb-3">
+                                <i class="bi bi-people text-muted" style="font-size: 3rem; opacity: 0.5;"></i>
+                            </div>
+                            <h5 class="text-muted">No collaborations yet</h5>
+                            <p class="text-muted small">Start a new collaboration to connect with others.</p>
+                            <a href="{{ url_for('collaboration.create_faculty_collaboration') }}" class="btn btn-primary mt-2">
+                                Create Collaboration
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,177 +1,124 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Club Dashboard | Anveshan</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/unstop_theme.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-</head>
-<body>
-
-    <div class="dashboard-container">
-        <!-- Sidebar -->
-        <div class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <a href="{{ url_for('club.club_dashboard') }}" class="logo-container">
-                    <div class="logo-icon">
-                        <i class="fas fa-search"></i>
-                    </div>
-                    <span class="logo-text">Anveshan</span>
-                </a>
-            </div>
-            
-            <div class="user-profile-sidebar">
-                <div style="width: 80px; height: 80px; background: #e0e0e0; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px auto; color: #666; font-size: 30px;">
-                    <i class="fas fa-users"></i>
-                </div>
-                <h4 style="margin: 0; font-size: 1.1rem;">{{ club.name if club else 'Club Admin' }}</h4>
-                <p style="color: #666; font-size: 0.85rem;">Organizer</p>
-            </div>
-
-            <ul class="sidebar-menu">
-                <li>
-                    <a href="{{ url_for('club.club_dashboard') }}" class="active">
-                        <i class="fas fa-th-large"></i> Dashboard
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url_for('club.post_announcement_page') }}">
-                        <i class="fas fa-bullhorn"></i> Post Announcement
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url_for('club.club_questions') }}">
-                        <i class="fas fa-question-circle"></i> Inquiries
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url_for('auth.logout') }}">
-                        <i class="fas fa-sign-out-alt"></i> Logout
-                    </a>
-                </li>
-            </ul>
+{% extends "base.html" %}
+{% block title %}Club Dashboard | Anveshan{% endblock %}
+{% block page_content %}
+<div class="container py-5">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 fw-bold text-dark">Club Dashboard</h1>
+            <p class="text-muted mb-0">Track performance and manage activities.</p>
         </div>
-
-        <!-- Main Content -->
-        <div class="main-content">
-            <!-- Header -->
-            <div style="margin-bottom: 30px; display: flex; align-items: center;">
-                <button class="toggle-sidebar-btn" onclick="toggleSidebar()">
-                    <i class="fas fa-bars"></i>
-                </button>
-                <div>
-                    <h2 style="margin: 0;">Club Overview</h2>
-                    <p style="color: var(--text-muted); margin: 0;">Track performance and manage activities.</p>
-                </div>
-            </div>
-
-            <!-- STATS SECTION -->
-            {% if error %}
-                <div style="background: #f8d7da; color: #721c24; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                    Error loading statistics: {{ error }}
-                </div>
-            {% else %}
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px;">
-                    <!-- Total Registrations -->
-                    <div class="card" style="margin-bottom: 0; display: flex; align-items: center; padding: 20px;">
-                        <div style="background: #e6f0ff; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 15px;">
-                            <i class="fas fa-users" style="color: var(--primary-color); font-size: 24px;"></i>
-                        </div>
-                        <div>
-                            <h2 style="margin: 0; font-size: 1.8rem; color: var(--primary-color);">{{ total_registrations|default(0) }}</h2>
-                            <p style="margin: 0; color: var(--text-muted); font-size: 0.9rem;">Total Registrations</p>
-                        </div>
-                    </div>
-
-                    <!-- Active Hackathons -->
-                    <div class="card" style="margin-bottom: 0; display: flex; align-items: center; padding: 20px;">
-                        <div style="background: #e0f2f1; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 15px;">
-                            <i class="fas fa-laptop-code" style="color: #00695c; font-size: 24px;"></i>
-                        </div>
-                        <div>
-                            <h2 style="margin: 0; font-size: 1.8rem; color: #00695c;">{{ hackathon_stats.active|default(0) }}</h2>
-                            <p style="margin: 0; color: var(--text-muted); font-size: 0.9rem;">Active Hackathons</p>
-                        </div>
-                    </div>
-
-                    <!-- Upcoming Events -->
-                    <div class="card" style="margin-bottom: 0; display: flex; align-items: center; padding: 20px;">
-                        <div style="background: #fff3e0; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 15px;">
-                            <i class="fas fa-calendar-alt" style="color: #e65100; font-size: 24px;"></i>
-                        </div>
-                        <div>
-                            <h2 style="margin: 0; font-size: 1.8rem; color: #e65100;">{{ event_stats.active|default(0) }}</h2>
-                            <p style="margin: 0; color: var(--text-muted); font-size: 0.9rem;">Upcoming Events</p>
-                        </div>
-                    </div>
-                </div>
-            {% endif %}
-
-            <!-- QUICK ACTIONS -->
-            <h3 class="card-title" style="margin-bottom: 20px;">Management Tools</h3>
-            <div style="display: flex; gap: 16px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 24px;">
-                <a href="{{ url_for('club.edit_announcements_page') }}" style="text-decoration: none;">
-                    <div class="card" style="height: 100%; transition: transform 0.2s; margin-bottom: 0; min-width: 280px;">
-                        <div style="text-align: center; padding: 20px;">
-                            <i class="fas fa-edit fa-3x" style="color: #1C4980; margin-bottom: 15px;"></i>
-                            <h4 style="margin: 0; color: var(--text-color);">Edit Active Hackathon</h4>
-                            <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 10px;">Update title, link, deadline.</p>
-                        </div>
-                    </div>
-                </a>
-                <a href="{{ url_for('club.post_announcement_page') }}" style="text-decoration: none;">
-                    <div class="card" style="height: 100%; transition: transform 0.2s; margin-bottom: 0; min-width: 280px;">
-                        <div style="text-align: center; padding: 20px;">
-                            <i class="fas fa-bullhorn fa-3x" style="color: var(--secondary-color); margin-bottom: 15px;"></i>
-                            <h4 style="margin: 0; color: var(--text-color);">Post Announcement</h4>
-                            <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 10px;">Poster + external registration link.</p>
-                        </div>
-                    </div>
-                </a>
-            </div>
-
-            <div class="card" style="max-width: 900px; margin-bottom: 30px;">
-
-            <!-- RECENT QUESTIONS -->
-            {% if recent_questions and recent_questions|length > 0 %}
-                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
-                    {% for q in recent_questions %}
-                        <div class="card" style="margin-bottom: 0;">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                                <span style="font-size: 0.8rem; background: #eee; padding: 2px 8px; border-radius: 4px;">{{ q.event_title }}</span>
-                                <span style="font-size: 0.8rem; color: {% if q.status == 'answered' %}#4CAF50{% else %}#FF9800{% endif %}; font-weight: bold;">{{ q.status|title }}</span>
-                            </div>
-                            <p style="margin-bottom: 5px; font-weight: 600;">{{ q.student_email }}</p>
-                            <p style="color: #666; font-size: 0.9rem; margin-bottom: 15px;">"{{ q.question|truncate(80) }}"</p>
-                            <a href="{{ url_for('club.answer_question', qid=q.id) }}" class="btn-apply" style="background: white; color: var(--primary-color); border: 1px solid var(--primary-color); padding: 5px;">
-                                {% if q.status == 'answered' %}View Details{% else %}Reply Now{% endif %}
-                            </a>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% endif %}
-
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('club.post_announcement_page') }}" class="btn btn-primary">
+                <i class="bi bi-megaphone me-2"></i>Post Announcement
+            </a>
+            <a href="{{ url_for('club.club_questions') }}" class="btn btn-outline-primary">
+                <i class="bi bi-question-circle me-2"></i>Inquiries
+            </a>
         </div>
     </div>
 
-</body>
-<script>
-    function toggleSidebar() {
-        const sidebar = document.getElementById('sidebar');
-        const container = document.querySelector('.dashboard-container');
-        sidebar.classList.toggle('collapsed');
-        container.classList.toggle('sidebar-collapsed');
-        const isCollapsed = sidebar.classList.contains('collapsed');
-        localStorage.setItem('sidebarCollapsed', isCollapsed);
-    }
+    <!-- Stats Section -->
+    {% if error %}
+        <div class="alert alert-danger" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>Error loading statistics: {{ error }}
+        </div>
+    {% else %}
+        <div class="row g-4 mb-5">
+            <!-- Total Registrations -->
+            <div class="col-md-4">
+                <div class="card h-100 shadow-sm border-0 hover-lift">
+                    <div class="card-body p-4 d-flex align-items-center">
+                        <div class="bg-primary bg-opacity-10 p-3 rounded-circle me-3">
+                            <i class="bi bi-people text-primary fs-4"></i>
+                        </div>
+                        <div>
+                            <h2 class="fw-bold mb-0 text-primary">{{ total_registrations|default(0) }}</h2>
+                            <p class="text-muted mb-0">Total Registrations</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-    document.addEventListener('DOMContentLoaded', () => {
-        const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
-        if (isCollapsed) {
-            document.getElementById('sidebar').classList.add('collapsed');
-            document.querySelector('.dashboard-container').classList.add('sidebar-collapsed');
-        }
-    });
-</script>
-</html>
+            <!-- Active Hackathons -->
+            <div class="col-md-4">
+                <div class="card h-100 shadow-sm border-0 hover-lift">
+                    <div class="card-body p-4 d-flex align-items-center">
+                        <div class="bg-success bg-opacity-10 p-3 rounded-circle me-3">
+                            <i class="bi bi-laptop text-success fs-4"></i>
+                        </div>
+                        <div>
+                            <h2 class="fw-bold mb-0 text-success">{{ hackathon_stats.active|default(0) }}</h2>
+                            <p class="text-muted mb-0">Active Hackathons</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upcoming Events -->
+            <div class="col-md-4">
+                <div class="card h-100 shadow-sm border-0 hover-lift">
+                    <div class="card-body p-4 d-flex align-items-center">
+                        <div class="bg-warning bg-opacity-10 p-3 rounded-circle me-3">
+                            <i class="bi bi-calendar-event text-warning fs-4"></i>
+                        </div>
+                        <div>
+                            <h2 class="fw-bold mb-0 text-warning">{{ event_stats.upcoming|default(0) }}</h2>
+                            <p class="text-muted mb-0">Upcoming Events</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Recent Inquiries Section -->
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white border-bottom-0 pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
+            <h5 class="card-title fw-bold mb-0">Recent Inquiries</h5>
+            <a href="{{ url_for('club.club_questions') }}" class="btn btn-sm btn-light">View All</a>
+        </div>
+        <div class="card-body p-4">
+            {% if recent_questions %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col">Date</th>
+                                <th scope="col">Student</th>
+                                <th scope="col">Event</th>
+                                <th scope="col">Question</th>
+                                <th scope="col">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for q in recent_questions %}
+                                <tr>
+                                    <td class="text-muted small">{{ q.created_at.strftime('%Y-%m-%d') }}</td>
+                                    <td class="fw-medium">{{ q.student_name }}</td>
+                                    <td>{{ q.event_title }}</td>
+                                    <td class="text-truncate" style="max-width: 200px;">{{ q.question_text }}</td>
+                                    <td>
+                                        {% if q.answer_text %}
+                                            <span class="badge bg-success-subtle text-success rounded-pill">Answered</span>
+                                        {% else %}
+                                            <span class="badge bg-warning-subtle text-warning rounded-pill">Pending</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-4">
+                    <div class="mb-3">
+                        <i class="bi bi-chat-square-text text-muted" style="font-size: 2.5rem; opacity: 0.5;"></i>
+                    </div>
+                    <p class="text-muted mb-0">No recent inquiries found.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

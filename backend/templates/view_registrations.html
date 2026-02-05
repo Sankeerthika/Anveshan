@@ -1,270 +1,157 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Registrations | Anveshan</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/unstop_theme.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        .filter-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 15px;
-        }
-        .form-control {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-family: inherit;
-        }
-        .table-responsive {
-            overflow-x: auto;
-        }
-        .table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-        .table th, .table td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #eee;
-        }
-        .table th {
-            font-weight: 600;
-            color: var(--text-muted);
-            background-color: #f8f9fa;
-        }
-        .table tr:hover {
-            background-color: #f8f9fa;
-        }
-        .team-members {
-            max-width: 300px;
-            word-wrap: break-word;
-        }
-    </style>
-</head>
-<body>
+{% extends "base.html" %}
 
-    <div class="dashboard-container">
-        <!-- Sidebar -->
-        <div class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <a href="{{ url_for('club.club_dashboard') }}" class="logo-container">
-                    <div class="logo-icon">
-                        <i class="fas fa-search"></i>
-                    </div>
-                    <span class="logo-text">Anveshan</span>
-                </a>
-            </div>
-            
-            <div class="user-profile-sidebar">
-                <div style="width: 80px; height: 80px; background: #e0e0e0; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px auto; color: #666; font-size: 30px;">
-                    <i class="fas fa-users"></i>
-                </div>
-                <h4 style="margin: 0; font-size: 1.1rem;">{{ user.name if user else 'Club Admin' }}</h4>
-                <p style="color: #666; font-size: 0.85rem;">Organizer</p>
-            </div>
+{% block title %}Student Registrations | Anveshan{% endblock %}
 
-            <ul class="sidebar-menu">
-                <li>
-                    <a href="{{ url_for('club.club_dashboard') }}">
-                        <i class="fas fa-th-large"></i> Dashboard
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url_for('events.view_registrations') }}" class="active">
-                        <i class="fas fa-list-alt"></i> Registrations
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url_for('club.post_announcement_page') }}">
-                        <i class="fas fa-bullhorn"></i> Post Announcement
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url_for('club.club_questions') }}">
-                        <i class="fas fa-question-circle"></i> Inquiries
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url_for('auth.logout') }}">
-                        <i class="fas fa-sign-out-alt"></i> Logout
-                    </a>
-                </li>
-            </ul>
+{% block page_content %}
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">Event Registrations</h2>
+            <p class="text-muted mb-0">View and manage participant registrations.</p>
         </div>
+        <a href="{{ url_for('club.club_dashboard') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Dashboard
+        </a>
+    </div>
 
-        <!-- Main Content -->
-        <div class="main-content">
-            <!-- Header -->
-            <div style="margin-bottom: 30px; display: flex; align-items: center;">
-                <button class="toggle-sidebar-btn" onclick="toggleSidebar()">
-                    <i class="fas fa-bars"></i>
-                </button>
-                <div>
-                    <h2 style="margin: 0;">Student Registrations</h2>
-                    {% if selected_event_title %}
-                        <p style="color: var(--text-muted); margin: 0;">Showing registrations for: <strong>{{ selected_event_title }}</strong></p>
-                    {% else %}
-                        <p style="color: var(--text-muted); margin: 0;">View and manage event participants.</p>
-                    {% endif %}
+    <!-- Filter Card -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body p-4">
+            <form method="GET" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label fw-bold small text-muted">SELECT EVENT</label>
+                    <select name="event_id" class="form-select" onchange="this.form.submit()">
+                        <option value="">All Events</option>
+                        {% for event in events %}
+                            <option value="{{ event.id }}" {% if selected_event_id|string == event.id|string %}selected{% endif %}>
+                                {{ event.title }}
+                            </option>
+                        {% endfor %}
+                    </select>
                 </div>
-            </div>
-
-            <!-- Filter Form -->
-            <div class="card" style="margin-bottom: 20px;">
-                <h4 style="margin-top: 0; margin-bottom: 20px; color: var(--primary-color);">Filter Registrations</h4>
-                <form method="GET">
-                    <div class="filter-grid">
-                        <div>
-                            <label style="font-weight: 500; margin-bottom: 5px; display: block;">Event</label>
-                            <select name="event_id" class="form-control">
-                                <option value="">All Events</option>
-                                {% for ev in events_list %}
-                                    <option value="{{ ev.id }}" {% if selected_event_id == ev.id|string %}selected{% endif %}>
-                                        {{ ev.title }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        {% if selected_event_id %}
-                        <input type="hidden" name="event_id" value="{{ selected_event_id }}">
-                        {% endif %}
-                        <div>
-                            <label style="font-weight: 500; margin-bottom: 5px; display: block;">Branch</label>
-                            <select name="branch" class="form-control">
-                                <option value="">All Branches</option>
-                                {% for branch in branches %}
-                                    <option value="{{ branch }}" {% if selected_branch == branch %}selected{% endif %}>
-                                        {{ branch }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div>
-                            <label style="font-weight: 500; margin-bottom: 5px; display: block;">Year</label>
-                            <select name="year" class="form-control">
-                                <option value="">All Years</option>
-                                {% for year in years %}
-                                    <option value="{{ year }}" {% if selected_year == year %}selected{% endif %}>
-                                        {{ year }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div>
-                            <label style="font-weight: 500; margin-bottom: 5px; display: block;">Domain</label>
-                            <select name="domain" class="form-control">
-                                <option value="">All Domains</option>
-                                {% for domain in domains %}
-                                    <option value="{{ domain }}" {% if selected_domain == domain %}selected{% endif %}>
-                                        {{ domain }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div style="display: flex; align-items: flex-end; gap: 10px;">
-                            <button type="submit" class="btn btn-primary" style="background-color: var(--primary-color); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
-                                Apply Filters
-                            </button>
-                            <a href="{{ url_for('events.view_registrations', **{}) }}" style="display: inline-block; padding: 10px 20px; color: #666; text-decoration: none; border: 1px solid #ddd; border-radius: 5px;">
-                                Clear
-                            </a>
-                            <a href="{% if selected_event_id %}{{ url_for('events.download_registrations', event_id=selected_event_id) }}{% else %}{{ url_for('events.download_registrations') }}{% endif %}" class="btn-primary" style="text-decoration:none;">
-                                <i class="fas fa-file-csv"></i> Export CSV
-                            </a>
-                            {% if selected_event_id %}
-                            <a href="{{ url_for('events.view_registrations') }}" style="display: inline-block; padding: 10px 20px; color: var(--primary-color); text-decoration: none;">
-                                View All Events
-                            </a>
-                            {% endif %}
-                        </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-bold small text-muted">SEARCH</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="text" name="search" class="form-control" placeholder="Name, Email, or Team..." value="{{ search_query }}">
                     </div>
-                </form>
-            </div>
-
-            <!-- Registrations Table -->
-            <div class="card">
-                {% if error %}
-                    <div style="color: red; margin-bottom: 15px;">{{ error }}</div>
-                {% endif %}
-                
-                <div class="table-responsive">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Event</th>
-                                <th>Team Name</th>
-                                <th>Size</th>
-                                <th>Team Lead</th>
-                                <th>Domain</th>
-                                <th>Members</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for r in registrations %}
-                            <tr>
-                                <td>{{ loop.index }}</td>
-                                <td>{{ r.event_title }}</td>
-                                <td style="font-weight: 500;">{{ r.team_name }}</td>
-                                <td style="text-align: center;">{{ r.team_size }}</td>
-                                <td>
-                                    <strong>{{ r.team_lead_name }}</strong><br>
-                                    <span style="font-size: 0.85rem; color: #666;">{{ r.team_lead_email }}</span><br>
-                                    <span style="font-size: 0.85rem; color: #666;">{{ r.team_lead_branch or 'N/A' }} - Year {{ r.team_lead_year or 'N/A' }}</span>
-                                </td>
-                                <td>{{ r.domain or 'N/A' }}</td>
-                                <td class="team-members">
-                                    {% if r.team_members and r.team_members != 'No team members' %}
-                                        {{ r.team_members|safe }}
-                                    {% else %}
-                                        <span style="color: #999;">No members</span>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% else %}
-                            <tr>
-                                <td colspan="7" style="text-align: center; padding: 30px; color: #666;">
-                                    No registrations found matching your filters.
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
                 </div>
-            </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <div class="d-flex gap-2 w-100">
+                        <button type="submit" class="btn btn-primary flex-grow-1">Filter</button>
+                        {% if selected_event_id or search_query %}
+                            <a href="{{ url_for('events.view_registrations') }}" class="btn btn-outline-secondary">Reset</a>
+                        {% endif %}
+                        {% if selected_event_id %}
+                             <a href="{{ url_for('events.export_registrations_csv', event_id=selected_event_id) }}" class="btn btn-success" title="Export CSV">
+                                <i class="bi bi-file-earmark-spreadsheet"></i>
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
 
-    <script>
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const container = document.querySelector('.dashboard-container');
-            
-            sidebar.classList.toggle('collapsed');
-            container.classList.toggle('sidebar-collapsed');
-            
-            // Save state to local storage
-            const isCollapsed = sidebar.classList.contains('collapsed');
-            localStorage.setItem('sidebarCollapsed', isCollapsed);
-        }
-
-        // Restore sidebar state on page load
-        document.addEventListener('DOMContentLoaded', () => {
-            const sidebar = document.getElementById('sidebar');
-            const container = document.querySelector('.dashboard-container');
-            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
-            
-            if (isCollapsed) {
-                sidebar.classList.add('collapsed');
-                container.classList.add('sidebar-collapsed');
-            }
-        });
-    </script>
-</body>
-</html>
+    <!-- Registrations Table -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4 py-3">Event</th>
+                            <th class="py-3">Participant / Team Lead</th>
+                            <th class="py-3">Details</th>
+                            <th class="py-3">Members</th>
+                            <th class="py-3">Status</th>
+                            <th class="pe-4 py-3 text-end">Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for reg in registrations %}
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="fw-bold text-primary">{{ reg.event_title }}</div>
+                                    <span class="badge bg-light text-secondary border">{{ reg.event_type|title }}</span>
+                                </td>
+                                <td>
+                                    <div class="fw-bold">{{ reg.lead_name }}</div>
+                                    <div class="small text-muted">{{ reg.lead_email }}</div>
+                                    {% if reg.lead_phone %}
+                                        <div class="small text-muted">{{ reg.lead_phone }}</div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if reg.team_name %}
+                                        <div class="d-flex align-items-center mb-1">
+                                            <i class="bi bi-people me-2 text-muted"></i>
+                                            <span class="fw-medium">{{ reg.team_name }}</span>
+                                        </div>
+                                    {% endif %}
+                                    {% if reg.project_title %}
+                                        <div class="d-flex align-items-center mb-1">
+                                            <i class="bi bi-lightbulb me-2 text-muted"></i>
+                                            <span class="small">{{ reg.project_title }}</span>
+                                        </div>
+                                    {% endif %}
+                                    {% if reg.domain %}
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-tag me-2 text-muted"></i>
+                                            <span class="badge bg-primary-subtle text-primary rounded-pill">{{ reg.domain }}</span>
+                                        </div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if reg.team_members %}
+                                        <div class="small text-muted" style="max-width: 250px;">
+                                            {{ reg.team_members }}
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted small">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-success-subtle text-success rounded-pill px-3">Registered</span>
+                                </td>
+                                <td class="pe-4 text-end text-muted small">
+                                    {{ reg.created_at.strftime('%Y-%m-%d') }}
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center py-5">
+                                    <div class="mb-3">
+                                        <i class="bi bi-inbox text-muted" style="font-size: 2.5rem; opacity: 0.5;"></i>
+                                    </div>
+                                    <h6 class="text-muted">No registrations found</h6>
+                                    <p class="text-muted small mb-0">Try adjusting your filters or search query.</p>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% if total_pages > 1 %}
+        <div class="card-footer bg-white border-top-0 py-3">
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center mb-0">
+                    <li class="page-item {% if current_page == 1 %}disabled{% endif %}">
+                        <a class="page-link border-0" href="{{ url_for('events.view_registrations', page=current_page-1, event_id=selected_event_id, search=search_query) }}">Previous</a>
+                    </li>
+                    {% for p in range(1, total_pages + 1) %}
+                        <li class="page-item {% if p == current_page %}active{% endif %}">
+                            <a class="page-link border-0 rounded-circle mx-1" href="{{ url_for('events.view_registrations', page=p, event_id=selected_event_id, search=search_query) }}">{{ p }}</a>
+                        </li>
+                    {% endfor %}
+                    <li class="page-item {% if current_page == total_pages %}disabled{% endif %}">
+                        <a class="page-link border-0" href="{{ url_for('events.view_registrations', page=current_page+1, event_id=selected_event_id, search=search_query) }}">Next</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

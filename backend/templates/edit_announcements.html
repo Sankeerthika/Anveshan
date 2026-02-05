@@ -1,168 +1,98 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Hackathons | Anveshan</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/unstop_theme.css') }}">
-    <style>
-        .page-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 24px;
-        }
-        .page-title {
-            margin: 0;
-            font-weight: 800;
-            color: var(--primary-color);
-        }
-        .toolbar {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-        }
-        .search-input {
-            background-color: #f8f9fa;
-            border: 1px solid #e0e0e0;
-            border-radius: 10px;
-            padding: 8px 12px;
-            width: 280px;
-        }
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 16px;
-        }
-        .card-opp {
-            border: 1px solid #eaeaea;
-            border-radius: 16px;
-            padding: 16px;
-            background: #fff;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        .card-opp:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 18px rgba(0,0,0,0.06);
-        }
-        .badge-type {
-            background: #e6f7ff;
-            color: #0073e6;
-            border-radius: 12px;
-            padding: 4px 10px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-        .meta {
-            font-size: 0.9rem;
-            color: #666;
-        }
-        .chip {
-            display: inline-block;
-            background: #f2f2f2;
-            border-radius: 20px;
-            padding: 4px 10px;
-            font-size: 12px;
-            margin-right: 6px;
-            margin-top: 6px;
-        }
-        .empty-state {
-            text-align: center;
-            padding: 40px 20px;
-            color: #666;
-            border: 1px dashed #ddd;
-            border-radius: 16px;
-            background: #fcfcfc;
-        }
-    </style>
-    <script>
-        function filterCards() {
-            const q = (document.getElementById('search').value || '').toLowerCase();
-            const cards = document.querySelectorAll('.card-opp');
-            cards.forEach(c => {
-                const txt = (c.innerText || '').toLowerCase();
-                c.style.display = txt.includes(q) ? '' : 'none';
-            });
-        }
-    </script>
-    <meta name="robots" content="noindex,nofollow">
-    <meta http-equiv="Cache-Control" content="no-store" />
-</head>
-<body>
-    <div class="container py-4">
-        <div class="page-header">
-            <div>
-                <h2 class="page-title">Edit Active Hackathons</h2>
-                <div class="meta">Manage title, deadline, registration link, and target years</div>
-            </div>
-            <div class="toolbar">
-                <input id="search" class="search-input" type="text" placeholder="Search hackathons..." oninput="filterCards()" />
-                <a href="{{ url_for('club.club_dashboard') }}" class="btn btn-outline-secondary">Back</a>
-            </div>
+{% extends "base.html" %}
+
+{% block title %}Edit Hackathons | Anveshan{% endblock %}
+
+{% block page_content %}
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">Edit Active Hackathons</h2>
+            <p class="text-muted mb-0">Manage title, deadline, registration link, and target years.</p>
         </div>
+        <div class="d-flex gap-2">
+            <input type="text" id="search" class="form-control" placeholder="Search hackathons..." onkeyup="filterCards()">
+            <a href="{{ url_for('club.club_dashboard') }}" class="btn btn-outline-secondary text-nowrap">
+                <i class="bi bi-arrow-left me-1"></i> Dashboard
+            </a>
+        </div>
+    </div>
 
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-
-        {% if events and events|length > 0 %}
-            <div class="grid">
-                {% for e in events %}
-                    <div class="card-opp">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <div class="d-flex align-items-center gap-2">
-                                    <span class="badge-type">{{ e.event_type|default('hackathon')|title }}</span>
-                                </div>
-                                <h5 class="mt-2 mb-1" style="font-weight:700;">{{ e.title }}</h5>
-                                {% if e.deadline %}
-                                    <div class="meta">
-                                        <i class="bi bi-calendar-event"></i>
-                                        Registration ends: {{ e.deadline }}
-                                    </div>
-                                {% endif %}
+    <div class="row g-4" id="hackathon-grid">
+        {% for h in hackathons %}
+            <div class="col-md-6 col-lg-4 card-opp">
+                <div class="card h-100 shadow-sm border-0">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-2 fw-bold" style="font-size: 0.75rem;">
+                                {{ h.event_type|title }}
+                            </span>
+                            <div class="dropdown">
+                                <button class="btn btn-link text-muted p-0" type="button" data-bs-toggle="dropdown">
+                                    <i class="bi bi-three-dots-vertical"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li>
+                                        <a class="dropdown-item" href="{{ url_for('club.post_announcement_page', event_id=h.id) }}">
+                                            <i class="bi bi-pencil me-2"></i>Edit Details
+                                        </a>
+                                    </li>
+                                </ul>
                             </div>
                         </div>
-                        {% if e.target_years %}
-                            <div class="mt-2">
-                                {% for yr in (e.target_years.split(',') if e.target_years else []) %}
-                                    <span class="chip">{{ yr.strip() }}</span>
+
+                        <h5 class="card-title fw-bold mb-3 text-truncate" title="{{ h.title }}">{{ h.title }}</h5>
+
+                        <div class="small text-muted mb-4">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="bi bi-calendar-event me-2 text-primary opacity-75"></i>
+                                <span>Deadline: {{ h.deadline }}</span>
+                            </div>
+                            {% if h.external_registration_link %}
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="bi bi-link-45deg me-2 text-primary opacity-75"></i>
+                                <a href="{{ h.external_registration_link }}" target="_blank" class="text-decoration-none text-muted text-truncate" style="max-width: 200px;">
+                                    {{ h.external_registration_link }}
+                                </a>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="d-flex flex-wrap gap-1">
+                                {% for y in h.target_years %}
+                                    <span class="badge bg-light text-dark border fw-normal">{{ y }}</span>
                                 {% endfor %}
                             </div>
-                        {% endif %}
-                        {% if e.external_registration_link %}
-                            <div class="mt-2 meta">
-                                <i class="bi bi-link-45deg"></i>
-                                <a href="{{ e.external_registration_link }}" target="_blank">{{ e.external_registration_link }}</a>
-                            </div>
-                        {% endif %}
-                        <div class="mt-3 d-flex justify-content-end">
-                            <a href="{{ url_for('club.edit_announcement', event_id=e.id) }}" class="btn btn-primary">
-                                <i class="bi bi-pencil"></i> Edit
-                            </a>
                         </div>
+
+                        <a href="{{ url_for('club.post_announcement_page', event_id=h.id) }}" class="btn btn-outline-primary w-100 btn-sm mt-auto">
+                            <i class="bi bi-pencil-square me-1"></i> Edit Hackathon
+                        </a>
                     </div>
-                {% endfor %}
+                </div>
             </div>
         {% else %}
-            <div class="empty-state">
-                <div class="mb-2"><i class="bi bi-info-circle"></i></div>
-                <h5 class="mb-1">No active hackathons</h5>
-                <p class="mb-3">Create a new announcement or adjust deadlines to see active items here.</p>
-                <a href="{{ url_for('club.post_announcement_page') }}" class="btn btn-primary">Post Announcement</a>
+            <div class="col-12">
+                <div class="text-center py-5 bg-light rounded-3 border border-dashed">
+                    <div class="mb-3">
+                        <i class="bi bi-calendar-x text-muted" style="font-size: 3rem; opacity: 0.5;"></i>
+                    </div>
+                    <h5 class="text-muted">No active hackathons found</h5>
+                    <p class="text-muted small mb-0">Post a new hackathon to see it here.</p>
+                </div>
             </div>
-        {% endif %}
+        {% endfor %}
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+</div>
+
+<script>
+    function filterCards() {
+        const q = (document.getElementById('search').value || '').toLowerCase();
+        const cards = document.querySelectorAll('.card-opp');
+        cards.forEach(c => {
+            const txt = (c.innerText || '').toLowerCase();
+            c.style.display = txt.includes(q) ? '' : 'none';
+        });
+    }
+</script>
+{% endblock %}

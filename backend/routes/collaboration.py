@@ -3,9 +3,17 @@ from db import db
 import os
 from werkzeug.utils import secure_filename
 import re
+from datetime import datetime, date
 from utils.skills import expand_skills, all_known_terms
 
 collaboration_bp = Blueprint('collaboration', __name__)
+
+def _expand_split(terms):
+    out = []
+    for t in terms:
+        parts = [p.strip() for p in re.split(r'[/&]|\band\b', t) if p.strip()]
+        out.extend(parts if parts else [t])
+    return out
 
 @collaboration_bp.route('/community')
 def community():
@@ -176,12 +184,26 @@ def create_project():
         description = request.form.get('description')
         tech_stack = request.form.get('tech_stack')
         looking_for = request.form.get('looking_for')
+        apply_deadline_str = (request.form.get('apply_deadline') or '').strip()
+        apply_deadline = None
+        if apply_deadline_str:
+            try:
+                d = datetime.strptime(apply_deadline_str, "%Y-%m-%d")
+                apply_deadline = d.replace(hour=23, minute=59, second=59)
+            except Exception:
+                apply_deadline = None
 
         try:
-            cursor.execute("""
-                INSERT INTO personal_projects (user_id, title, domain, description, tech_stack, looking_for)
-                VALUES (%s, %s, %s, %s, %s, %s)
-            """, (session['user_id'], title, domain, description, tech_stack, looking_for))
+            cursor.execute("SHOW COLUMNS FROM personal_projects")
+            cols = [c['Field'] if isinstance(c, dict) else c[0] for c in cursor.fetchall()]
+            available = set(cols)
+            insert_cols = ['user_id','title','domain','description','tech_stack','looking_for']
+            values = [session['user_id'], title, domain, description, tech_stack, looking_for]
+            if 'apply_deadline' in available and apply_deadline is not None:
+                insert_cols.append('apply_deadline'); values.append(apply_deadline)
+            cols_sql = ", ".join(insert_cols)
+            ph_sql = ", ".join(["%s"] * len(values))
+            cursor.execute(f"INSERT INTO personal_projects ({cols_sql}) VALUES ({ph_sql})", tuple(values))
             db.commit()
             flash("Project posted successfully!", "success")
             return redirect(url_for('collaboration.community'))
@@ -309,7 +331,22 @@ def project_details(project_id):
         project['request_status'] = req['status'] if req else None
         cursor.close()
 
-    return render_template('project_details.html', user=user, project=project, recommended_users=recommended_users, comments=comments, requests=requests)
+    # Compute join availability for non-owner
+    can_join = True
+    if session['user_id'] != project['user_id']:
+        dl = project.get('apply_deadline')
+        if isinstance(dl, datetime):
+            if dl and dl < datetime.now():
+                can_join = False
+        elif dl:
+            try:
+                parsed = datetime.strptime(str(dl), "%Y-%m-%d %H:%M:%S")
+                if parsed < datetime.now():
+                    can_join = False
+            except Exception:
+                pass
+
+    return render_template('project_details.html', user=user, project=project, recommended_users=recommended_users, comments=comments, requests=requests, can_join=can_join)
 
 @collaboration_bp.route('/community/project/<int:project_id>/invite/<int:user_id>', methods=['POST'])
 def invite_project_user(project_id, user_id):
@@ -365,13 +402,27 @@ def edit_project(project_id):
         description = request.form.get('description')
         tech_stack = request.form.get('tech_stack')
         looking_for = request.form.get('looking_for')
+        apply_deadline_str = (request.form.get('apply_deadline') or '').strip()
+        apply_deadline = None
+        if apply_deadline_str:
+            try:
+                d = datetime.strptime(apply_deadline_str, "%Y-%m-%d")
+                apply_deadline = d.replace(hour=23, minute=59, second=59)
+            except Exception:
+                apply_deadline = None
 
         try:
-            cursor.execute("""
-                UPDATE personal_projects 
-                SET title=%s, domain=%s, description=%s, tech_stack=%s, looking_for=%s
-                WHERE id=%s
-            """, (title, domain, description, tech_stack, looking_for, project_id))
+            cursor.execute("SHOW COLUMNS FROM personal_projects")
+            cols = [c['Field'] if isinstance(c, dict) else c[0] for c in cursor.fetchall()]
+            available = set(cols)
+            set_parts = ["title=%s","domain=%s","description=%s","tech_stack=%s","looking_for=%s"]
+            values = [title, domain, description, tech_stack, looking_for]
+            if 'apply_deadline' in available:
+                set_parts.append("apply_deadline=%s")
+                values.append(apply_deadline)
+            set_sql = ", ".join(set_parts)
+            values.append(project_id)
+            cursor.execute(f"UPDATE personal_projects SET {set_sql} WHERE id=%s", tuple(values))
             db.commit()
             flash("Project updated successfully!", "success")
             return redirect(url_for('collaboration.project_details', project_id=project_id))
@@ -428,6 +479,22 @@ def join_project(project_id):
     
     cursor = db.cursor()
     try:
+        # Block join after deadline
+        cursor.execute("SELECT apply_deadline, user_id FROM personal_projects WHERE id = %s", (project_id,))
+        row = cursor.fetchone()
+        if row and row[0]:
+            dl = row[0]
+            if isinstance(dl, datetime):
+                passed = dl < datetime.now()
+            else:
+                try:
+                    parsed = datetime.strptime(str(dl), "%Y-%m-%d %H:%M:%S")
+                    passed = parsed < datetime.now()
+                except Exception:
+                    passed = False
+            if passed and session['user_id'] != row[1]:
+                flash("Requests are closed (deadline passed).", "warning")
+                return redirect(url_for('collaboration.project_details', project_id=project_id))
         # Check if already requested
         cursor.execute("SELECT 1 FROM project_requests WHERE project_id = %s AND user_id = %s", (project_id, session['user_id']))
         if cursor.fetchone():
@@ -657,6 +724,14 @@ def create_faculty_collaboration():
         description = (request.form.get('description') or '').strip()
         collab_type = (request.form.get('type') or 'article').strip()
         audience = (request.form.get('audience') or 'faculty_only').strip()
+        apply_deadline_str = (request.form.get('apply_deadline') or '').strip()
+        apply_deadline = None
+        if apply_deadline_str:
+            try:
+                d = datetime.strptime(apply_deadline_str, "%Y-%m-%d")
+                apply_deadline = d.replace(hour=23, minute=59, second=59)
+            except Exception:
+                apply_deadline = None
         try:
             max_students = int(request.form.get('max_students') or 0)
         except ValueError:
@@ -678,6 +753,8 @@ def create_faculty_collaboration():
             available = set(cols)
             insert_cols = ['faculty_id','title','description','collaboration_type','audience','max_students','max_faculty','required_skills']
             values = [session['user_id'], title, description, collab_type, audience, max_students, max_faculty, required_skills]
+            if 'apply_deadline' in available and apply_deadline is not None:
+                insert_cols.append('apply_deadline'); values.append(apply_deadline)
             if 'required_skills_must' in available:
                 insert_cols.append('required_skills_must'); values.append(required_skills_must)
             elif 'must_have_skills' in available:
@@ -874,6 +951,23 @@ def faculty_collaboration_details(collab_id):
     else:
         collab['my_status'] = None
 
+    # Deadline check for non-owner viewers
+    if can_apply and user['id'] != collab['faculty_id']:
+        dl = collab.get('apply_deadline')
+        if isinstance(dl, datetime):
+            if dl < datetime.now():
+                can_apply = False
+                rejection_reason = "Deadline passed."
+        elif dl:
+            try:
+                # Fallback parsing if driver returns string
+                parsed = datetime.strptime(str(dl), "%Y-%m-%d %H:%M:%S")
+                if parsed < datetime.now():
+                    can_apply = False
+                    rejection_reason = "Deadline passed."
+            except Exception:
+                pass
+
     if can_apply:
         if user['role'] == 'student':
             if collab['audience'] == 'faculty_only':
@@ -937,6 +1031,22 @@ def apply_faculty_collaboration(collab_id):
     
     cursor = db.cursor()
     try:
+        # Block applications after deadline
+        cursor.execute("SELECT apply_deadline, faculty_id FROM faculty_collaborations WHERE id = %s", (collab_id,))
+        row = cursor.fetchone()
+        if row and row[0]:
+            dl = row[0]
+            if isinstance(dl, datetime):
+                passed = dl < datetime.now()
+            else:
+                try:
+                    parsed = datetime.strptime(str(dl), "%Y-%m-%d %H:%M:%S")
+                    passed = parsed < datetime.now()
+                except Exception:
+                    passed = False
+            if passed and session['user_id'] != row[1]:
+                flash("Applications are closed (deadline passed).", "warning")
+                return redirect(url_for('collaboration.faculty_collaboration_details', collab_id=collab_id))
         cursor.execute("SELECT 1 FROM collaboration_requests WHERE collaboration_id = %s AND user_id = %s", (collab_id, session['user_id']))
         if cursor.fetchone():
             flash("Already applied.", "warning")

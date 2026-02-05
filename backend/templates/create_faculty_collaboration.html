@@ -1,132 +1,182 @@
 {% extends "base.html" %}
 
-{% block content %}
-<div style="max-width: 980px; margin: 40px auto; padding: 0 24px;">
-    <div style="background: #fff; padding: 32px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.06); border: 1px solid #eef2f6;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px;">
-            <div>
-                <h2 style="margin: 0; color: #1f2937; font-size: 1.8rem; letter-spacing: -0.02em;">Create New Collaboration</h2>
-                <div style="color: #6b7280; font-size: 0.95rem; margin-top: 6px;">Set up a professional collaboration with clear roles and requirements.</div>
-            </div>
-            <div style="display: flex; gap: 10px;">
-                <a href="{{ url_for('collaboration.faculty_dashboard') }}" style="color: #64748b; text-decoration: none; padding: 10px 16px; border: 1px solid #e5e7eb; border-radius: 10px;">Cancel</a>
-                <button form="create-collab-form" type="submit" class="btn-primary" style="padding: 10px 20px; border-radius: 10px;">Create</button>
+{% block title %}Create Collaboration | Anveshan{% endblock %}
+
+{% block page_content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-body p-4 p-md-5">
+                    <!-- Header -->
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h1 class="h3 fw-bold text-dark mb-1">Create New Collaboration</h1>
+                            <p class="text-muted mb-0">Set up a professional collaboration with clear roles and requirements.</p>
+                        </div>
+                        <a href="{{ url_for('collaboration.faculty_dashboard') }}" class="btn btn-outline-secondary rounded-pill">
+                            <i class="bi bi-x-lg"></i>
+                        </a>
+                    </div>
+
+                    <form id="create-collab-form" action="{{ url_for('collaboration.create_faculty_collaboration') }}" method="POST" novalidate>
+                        <!-- Basic Info -->
+                        <div class="row g-4 mb-4">
+                            <div class="col-12">
+                                <label for="title" class="form-label fw-bold">Title</label>
+                                <input type="text" name="title" id="title" required class="form-control form-control-lg bg-light border-0" placeholder="Concise, descriptive title">
+                            </div>
+                            
+                            <div class="col-12">
+                                <label class="form-label fw-bold">Collaboration Type</label>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <input type="radio" class="btn-check" name="type" id="type_article" value="article" checked>
+                                        <label class="btn btn-outline-primary w-100 p-3 rounded-3 text-start d-flex align-items-center" for="type_article">
+                                            <i class="bi bi-file-text fs-4 me-3"></i>
+                                            <div>
+                                                <div class="fw-bold">Article Writing</div>
+                                                <small class="text-muted">Joint publication or paper</small>
+                                            </div>
+                                        </label>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <input type="radio" class="btn-check" name="type" id="type_project" value="project">
+                                        <label class="btn btn-outline-primary w-100 p-3 rounded-3 text-start d-flex align-items-center" for="type_project">
+                                            <i class="bi bi-kanban fs-4 me-3"></i>
+                                            <div>
+                                                <div class="fw-bold">Research / Project</div>
+                                                <small class="text-muted">Practical implementation</small>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <label for="description" class="form-label fw-bold">Description & Goals</label>
+                                <textarea name="description" id="description" rows="5" required class="form-control bg-light border-0" placeholder="Outline objectives, scope, expected outcomes, and timelines."></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Audience & Requirements -->
+                        <div class="bg-light p-4 rounded-4 mb-4 border">
+                            <h5 class="fw-bold mb-3"><i class="bi bi-people-fill me-2 text-primary"></i>Target Audience</h5>
+                            
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-4">
+                                    <input type="radio" class="btn-check" name="audience" id="audience_faculty" value="faculty_only" onclick="toggleFields('faculty')" checked>
+                                    <label class="btn btn-white border w-100 p-3 rounded-3 text-center shadow-sm h-100" for="audience_faculty">
+                                        <i class="bi bi-mortarboard fs-3 d-block mb-2 text-primary"></i>
+                                        <span class="fw-bold d-block">Faculty Only</span>
+                                        <small class="text-muted">Peers & colleagues</small>
+                                    </label>
+                                </div>
+                                <div class="col-md-4">
+                                    <input type="radio" class="btn-check" name="audience" id="audience_students" value="students_only" onclick="toggleFields('students')">
+                                    <label class="btn btn-white border w-100 p-3 rounded-3 text-center shadow-sm h-100" for="audience_students">
+                                        <i class="bi bi-backpack fs-3 d-block mb-2 text-success"></i>
+                                        <span class="fw-bold d-block">Students Only</span>
+                                        <small class="text-muted">Mentorship</small>
+                                    </label>
+                                </div>
+                                <div class="col-md-4">
+                                    <input type="radio" class="btn-check" name="audience" id="audience_both" value="both" onclick="toggleFields('both')">
+                                    <label class="btn btn-white border w-100 p-3 rounded-3 text-center shadow-sm h-100" for="audience_both">
+                                        <i class="bi bi-collection fs-3 d-block mb-2 text-info"></i>
+                                        <span class="fw-bold d-block">Mixed Team</span>
+                                        <small class="text-muted">Faculty & Students</small>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Student Limits -->
+                            <div id="student-limits" class="d-none border-top pt-3 mt-3">
+                                <h6 class="fw-bold text-success mb-3">Student Requirements</h6>
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label for="max_students" class="form-label">Max Students</label>
+                                        <input type="number" name="max_students" id="max_students" min="0" value="0" class="form-control">
+                                    </div>
+                                    <div class="col-md-8">
+                                        <label for="required_skills_must" class="form-label">Must-Have Skills</label>
+                                        <input type="text" name="required_skills_must" id="required_skills_must" placeholder="e.g. Python, AI, React" class="form-control">
+                                        <div class="form-text">Comma-separated skills required to be eligible.</div>
+                                    </div>
+                                    <div class="col-12">
+                                        <label for="required_skills_nice" class="form-label">Nice-to-Have Skills</label>
+                                        <input type="text" name="required_skills_nice" id="required_skills_nice" placeholder="e.g. Writing, UI/UX" class="form-control">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Faculty Limits -->
+                            <div id="faculty-limits" class="d-none border-top pt-3 mt-3">
+                                <h6 class="fw-bold text-primary mb-3">Faculty Requirements</h6>
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label for="max_faculty" class="form-label">Max Faculty</label>
+                                        <input type="number" name="max_faculty" id="max_faculty" min="0" value="0" class="form-control">
+                                    </div>
+                                    <div class="col-md-8 d-flex align-items-center pt-4">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="strict_visibility" name="strict_visibility">
+                                            <label class="form-check-label" for="strict_visibility">Hide from non-matching faculty in listings</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Application Deadline -->
+                        <div class="bg-light p-4 rounded-4 mb-4 border">
+                            <h5 class="fw-bold mb-3"><i class="bi bi-calendar-event me-2 text-danger"></i>Application Deadline</h5>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="apply_deadline" class="form-label">Apply Until</label>
+                                    <input type="date" name="apply_deadline" id="apply_deadline" class="form-control">
+                                    <div class="form-text">After this date, others won’t see the apply link.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit -->
+                        <div class="d-grid d-md-flex justify-content-md-end gap-2">
+                            <a href="{{ url_for('collaboration.faculty_dashboard') }}" class="btn btn-light rounded-pill px-4">Cancel</a>
+                            <button type="submit" class="btn btn-primary rounded-pill px-5 shadow-sm">
+                                <i class="bi bi-plus-lg me-2"></i>Create Collaboration
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
-
-        <form id="create-collab-form" action="{{ url_for('collaboration.create_faculty_collaboration') }}" method="POST" novalidate>
-            <div style="display: grid; grid-template-columns: 1fr; gap: 24px;">
-                <div class="row g-3">
-                    <div class="col-12 col-md-6">
-                        <label for="title" style="display: block; margin-bottom: 8px; font-weight: 600; color: #374151;">Title</label>
-                        <input type="text" name="title" id="title" required aria-label="Collaboration title" placeholder="Concise, descriptive title" class="form-control"
-                               style="width: 100%; padding: 12px 14px; border: 1px solid #e5e7eb; border-radius: 10px; font-size: 0.95rem;">
-                    </div>
-                    <div class="col-12 col-md-6">
-                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #374151;">Collaboration Type</label>
-                        <div class="btn-group" role="group" aria-label="Collaboration type" style="display:flex; gap:10px;">
-                            <input type="radio" class="btn-check" name="type" id="type_article" value="article" autocomplete="off" checked>
-                            <label class="btn btn-outline-primary" for="type_article" style="flex:1;">Article Writing</label>
-                            <input type="radio" class="btn-check" name="type" id="type_project" value="project" autocomplete="off">
-                            <label class="btn btn-outline-primary" for="type_project" style="flex:1;">Research / Project</label>
-                        </div>
-                    </div>
-                </div>
-
-                <div>
-                    <label for="description" style="display: block; margin-bottom: 8px; font-weight: 600; color: #374151;">Description & Goals</label>
-                    <textarea name="description" id="description" rows="6" required aria-label="Description and goals" placeholder="Outline objectives, scope, expected outcomes, and timelines." class="form-control"
-                              style="width: 100%; padding: 12px 14px; border: 1px solid #e5e7eb; border-radius: 10px; font-size: 0.95rem;"></textarea>
-                </div>
-
-                <div style="display: grid; grid-template-columns: 1fr; gap: 14px; background: #f9fafb; border: 1px solid #eef2f7; border-radius: 12px; padding: 18px;">
-                    <div style="display:flex; justify-content: space-between; align-items: center;">
-                        <div style="font-weight: 700; color: #111827;">Collaboration Audience</div>
-                        <div style="color: #6b7280; font-size: 0.9rem;">Choose visibility and application eligibility</div>
-                    </div>
-                    <div class="row g-3">
-                        <label class="col-12 col-md-4" style="cursor: pointer; border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px;">
-                            <div style="font-weight: 600; color: #1f2937; margin-bottom: 6px;">
-                                <input type="radio" name="audience" value="faculty_only" onclick="toggleFields('faculty')" checked aria-label="Audience faculty only"> Faculty Only
-                            </div>
-                            <div style="color: #6b7280; font-size: 0.9rem;">Students cannot view or apply.</div>
-                        </label>
-                        <label class="col-12 col-md-4" style="cursor: pointer; border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px;">
-                            <div style="font-weight: 600; color: #1f2937; margin-bottom: 6px;">
-                                <input type="radio" name="audience" value="students_only" onclick="toggleFields('students')" aria-label="Audience students only"> Students Only
-                            </div>
-                            <div style="color: #6b7280; font-size: 0.9rem;">Mentorship or student‑led research.</div>
-                        </label>
-                        <label class="col-12 col-md-4" style="cursor: pointer; border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px;">
-                            <div style="font-weight: 600; color: #1f2937; margin-bottom: 6px;">
-                                <input type="radio" name="audience" value="both" onclick="toggleFields('both')" aria-label="Audience faculty and students"> Faculty + Students
-                            </div>
-                            <div style="color: #6b7280; font-size: 0.9rem;">Joint research team.</div>
-                        </label>
-                    </div>
-
-                    <div id="student-limits" style="display:none; margin-top: 6px;">
-                        <div class="row g-3">
-                            <div class="col-12 col-md-4">
-                                <label for="max_students" style="display:block; margin-bottom: 8px; font-weight:600; color:#374151;">Max Students</label>
-                                <input type="number" name="max_students" id="max_students" min="0" value="0" class="form-control" aria-label="Maximum students"
-                                       style="width: 100%; padding: 12px 14px; border: 1px solid #e5e7eb; border-radius: 10px; font-size: 0.95rem;">
-                            </div>
-                            <div class="col-12 col-md-8">
-                                <label for="required_skills_must" style="display:block; margin-bottom: 8px; font-weight:600; color:#374151;">Must‑Have Skills</label>
-                                <input type="text" name="required_skills_must" id="required_skills_must" placeholder="e.g. Python, AI" aria-label="Must-have skills"
-                                       class="form-control" style="width: 100%; padding: 12px 14px; border: 1px solid #e5e7eb; border-radius: 10px; font-size: 0.95rem;">
-                                <div style="color:#6b7280; font-size:0.85rem; margin-top:6px;">Comma‑separated skills required to be eligible.</div>
-                            </div>
-                        </div>
-                        <div style="display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 10px;">
-                            <div>
-                                <label for="required_skills_nice" style="display:block; margin-bottom: 8px; font-weight:600; color:#374151;">Nice‑to‑Have Skills</label>
-                                <input type="text" name="required_skills_nice" id="required_skills_nice" placeholder="e.g. Writing, UI/UX" aria-label="Nice-to-have skills"
-                                       class="form-control" style="width: 100%; padding: 12px 14px; border: 1px solid #e5e7eb; border-radius: 10px; font-size: 0.95rem;">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="faculty-limits" style="display:none; margin-top: 6px;">
-                        <div class="row g-3">
-                            <div class="col-12 col-md-4">
-                                <label for="max_faculty" style="display:block; margin-bottom: 8px; font-weight:600; color:#374151;">Max Faculty</label>
-                                <input type="number" name="max_faculty" id="max_faculty" min="0" value="0" class="form-control" aria-label="Maximum faculty"
-                                       style="width: 100%; padding: 12px 14px; border: 1px solid #e5e7eb; border-radius: 10px; font-size: 0.95rem;">
-                            </div>
-                            <label class="col-12 col-md-8" style="display:flex; align-items:center; gap:10px; cursor:pointer; color:#374151;">
-                                <input type="checkbox" name="strict_visibility" style="width:18px; height:18px;" aria-label="Hide from non-matching faculty in listings">
-                                <span>Hide from non‑matching faculty in listings</span>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-
-                <div style="display:flex; justify-content:flex-end; gap:10px;">
-                    <a href="{{ url_for('collaboration.faculty_dashboard') }}" style="color:#64748b; text-decoration:none; padding:10px 16px; border:1px solid #e5e7eb; border-radius:10px;">Cancel</a>
-                    <button type="submit" class="btn-primary" style="padding:10px 20px; border-radius:10px;">Create Collaboration</button>
-                </div>
-            </div>
-        </form>
     </div>
 </div>
 
 <script>
     function toggleFields(audience) {
-        const studentSection = document.getElementById('student-limits');
-        const facultySection = document.getElementById('faculty-limits');
-        if (audience === 'faculty_only') {
-            studentSection.style.display = 'none';
-            facultySection.style.display = 'block';
-        } else if (audience === 'students_only') {
-            studentSection.style.display = 'block';
-            facultySection.style.display = 'none';
-        } else if (audience === 'both') {
-            studentSection.style.display = 'block';
-            facultySection.style.display = 'block';
+        const studentLimits = document.getElementById('student-limits');
+        const facultyLimits = document.getElementById('faculty-limits');
+
+        if (audience === 'faculty') {
+            studentLimits.classList.add('d-none');
+            facultyLimits.classList.remove('d-none');
+        } else if (audience === 'students') {
+            studentLimits.classList.remove('d-none');
+            facultyLimits.classList.add('d-none');
+        } else { // both
+            studentLimits.classList.remove('d-none');
+            facultyLimits.classList.remove('d-none');
         }
     }
-    toggleFields('faculty_only');
+
+    // Initialize state
+    document.addEventListener('DOMContentLoaded', function() {
+        const checkedAudience = document.querySelector('input[name="audience"]:checked').value;
+        if (checkedAudience === 'faculty_only') toggleFields('faculty');
+        else if (checkedAudience === 'students_only') toggleFields('students');
+        else toggleFields('both');
+    });
 </script>
 {% endblock %}

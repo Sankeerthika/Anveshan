@@ -1,139 +1,72 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% if is_edit %}Edit Project{% else %}Post a Project{% endif %} | Anveshan</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/unstop_theme.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-</head>
-<body>
+{% extends "base.html" %}
 
-    <div class="dashboard-container">
-        <!-- Sidebar -->
-        <div class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <a href="{{ url_for('student.dashboard') }}" class="logo-container">
-                    <div class="logo-icon">
-                        <i class="fas fa-search"></i>
-                    </div>
-                    <span class="logo-text">Anveshan</span>
+{% block title %}{% if is_edit %}Edit Project{% else %}Post Project{% endif %} | Anveshan{% endblock %}
+
+{% block page_content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 fw-bold text-dark">{% if is_edit %}Edit Project{% else %}Post a Project{% endif %}</h1>
+                    <p class="text-muted mb-0">{% if is_edit %}Update your project details.{% else %}Share your idea and find collaborators.{% endif %}</p>
+                </div>
+                <a href="{{ url_for('collaboration.community') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-2"></i>Back to Community
                 </a>
             </div>
-            
-            <div class="user-profile-sidebar">
-                <img src="{{ url_for('static', filename='uploads/profile_pics/' + (user.profile_photo if user.profile_photo else 'default.png')) }}" 
-                     alt="Profile" class="user-avatar-small"
-                     onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><rect width=%27100%27 height=%27100%27 fill=%27%23e0e0e0%27/><text x=%2750%27 y=%2755%27 font-size=%2712%27 text-anchor=%27middle%27 fill=%27%23666%27>Avatar</text></svg>'">
-                <h4 style="margin: 0; font-size: 1.1rem;">{{ user.name or 'Student' }}</h4>
-                <p style="color: #666; font-size: 0.85rem;">{{ user.role|title }}</p>
-                <a href="{{ url_for('student.profile') }}" style="font-size: 0.8rem; color: var(--secondary-color);">Edit Profile</a>
-            </div>
 
-            <ul class="sidebar-menu">
-                <li>
-                    <a href="{{ url_for('student.dashboard') }}">
-                        <i class="fas fa-th-large"></i> Dashboard
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url_for('collaboration.community') }}" class="active">
-                        <i class="fas fa-users-cog"></i> Community
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url_for('student.profile') }}">
-                        <i class="fas fa-user"></i> My Profile
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url_for('find_team.find_team') }}">
-                        <i class="fas fa-users"></i> Find Team
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url_for('find_team.my_join_requests') }}">
-                        <i class="fas fa-envelope"></i> My Requests
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url_for('auth.logout') }}">
-                        <i class="fas fa-sign-out-alt"></i> Logout
-                    </a>
-                </li>
-            </ul>
-        </div>
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+                    <form method="POST">
+                        <div class="mb-4">
+                            <label class="form-label fw-bold small text-secondary">PROJECT TITLE</label>
+                            <input type="text" name="title" class="form-control form-control-lg" required placeholder="e.g. AI-based Attendance System" value="{{ project.title if project else '' }}">
+                        </div>
 
-        <!-- Main Content -->
-        <div class="main-content">
-            <div class="header" style="margin-bottom: 30px; display: flex; align-items: center;">
-                <button class="toggle-sidebar-btn" onclick="toggleSidebar()">
-                    <i class="fas fa-bars"></i>
-                </button>
-                <div style="margin-left: 15px;">
-                    <h2 style="margin: 0;">{% if is_edit %}Edit Project{% else %}Post a Project{% endif %}</h2>
-                    <p style="color: var(--text-muted); margin: 0;">{% if is_edit %}Update your project details.{% else %}Share your idea and find collaborators.{% endif %}</p>
+                        <div class="mb-4">
+                            <label class="form-label fw-bold small text-secondary">DOMAIN</label>
+                            <select name="domain" class="form-select">
+                                {% set domains = ['AI/ML', 'Web Development', 'App Development', 'IoT', 'Blockchain', 'Cybersecurity', 'Research', 'Other'] %}
+                                {% for d in domains %}
+                                    <option value="{{ d }}" {% if project and project.domain == d %}selected{% endif %}>{{ d }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold small text-secondary">SHORT DESCRIPTION</label>
+                            <textarea name="description" rows="5" class="form-control" required placeholder="Describe your project idea, goals, and current status...">{{ project.description if project else '' }}</textarea>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold small text-secondary">TECH STACK</label>
+                            <input type="text" name="tech_stack" class="form-control" placeholder="e.g. Python, React, Firebase" value="{{ project.tech_stack if project else '' }}">
+                            <div class="form-text">Comma separated technologies.</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold small text-secondary">LOOKING FOR</label>
+                            <input type="text" name="looking_for" class="form-control" placeholder="e.g. 1 Frontend Dev, Mentor, Feedback" value="{{ project.looking_for if project else '' }}">
+                            <div class="form-text">Specify who you need: team members, mentors, or just review.</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold small text-secondary">APPLICATION DEADLINE</label>
+                            <input type="date" name="apply_deadline" class="form-control" value="{% if project and project.apply_deadline %}{{ project.apply_deadline.strftime('%Y-%m-%d') }}{% endif %}">
+                            <div class="form-text">After this date, others won’t be able to request to join.</div>
+                        </div>
+
+                        <div class="d-flex gap-2 pt-3 border-top mt-4">
+                            <button type="submit" class="btn btn-primary px-4 fw-bold">
+                                {% if is_edit %}Update Project{% else %}Post Project{% endif %}
+                            </button>
+                            <a href="{{ url_for('collaboration.community') }}" class="btn btn-light">Cancel</a>
+                        </div>
+                    </form>
                 </div>
-            </div>
-
-            <div class="card" style="max-width: 800px; margin: 0 auto;">
-                <form method="POST">
-                    <div class="form-group">
-                        <label for="title">Project Title</label>
-                        <input type="text" id="title" name="title" class="form-control" required placeholder="e.g. AI-based Attendance System" value="{{ project.title if project else '' }}">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="domain">Domain</label>
-                        <select id="domain" name="domain" class="form-control">
-                            {% set domains = ['AI/ML', 'Web Development', 'App Development', 'IoT', 'Blockchain', 'Cybersecurity', 'Research', 'Other'] %}
-                            {% for d in domains %}
-                                <option value="{{ d }}" {% if project and project.domain == d %}selected{% endif %}>{{ d }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="description">Short Description</label>
-                        <textarea id="description" name="description" rows="4" class="form-control" required placeholder="Describe your project idea...">{{ project.description if project else '' }}</textarea>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="tech_stack">Tech Stack</label>
-                        <input type="text" id="tech_stack" name="tech_stack" class="form-control" placeholder="e.g. Python, React, Firebase" value="{{ project.tech_stack if project else '' }}">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="looking_for">Looking For</label>
-                        <input type="text" id="looking_for" name="looking_for" class="form-control" placeholder="e.g. 1 Frontend Dev, Mentor, Feedback" value="{{ project.looking_for if project else '' }}">
-                        <small style="color: #666;">Specify who you need: team members, mentors, or just review.</small>
-                    </div>
-
-                    <div style="margin-top: 20px;">
-                        <button type="submit" class="btn-primary">{% if is_edit %}Update Project{% else %}Post Project{% endif %}</button>
-                        <a href="{{ url_for('collaboration.community') }}" class="btn-secondary" style="margin-left: 10px; text-decoration: none; padding: 10px 20px; border-radius: 5px; background: #eee; color: #333;">Cancel</a>
-                    </div>
-                </form>
             </div>
         </div>
     </div>
-
-    <script>
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const container = document.querySelector('.dashboard-container');
-            sidebar.classList.toggle('collapsed');
-            container.classList.toggle('sidebar-collapsed');
-            const isCollapsed = sidebar.classList.contains('collapsed');
-            localStorage.setItem('sidebarCollapsed', isCollapsed);
-        }
-        document.addEventListener('DOMContentLoaded', () => {
-            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
-            if (isCollapsed) {
-                document.getElementById('sidebar').classList.add('collapsed');
-                document.querySelector('.dashboard-container').classList.add('sidebar-collapsed');
-            }
-        });
-    </script>
-</body>
-</html>
+</div>
+{% endblock %}

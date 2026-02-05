@@ -1,40 +1,86 @@
-<!doctype html>
-<html>
-<head>
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>Events</title>
-	<link rel="stylesheet" href="{{ url_for('static', filename='css/aurora.css') }}">
-</head>
-<body>
+{% extends "base.html" %}
 
-<header style="padding:18px 0;">
-	<div class="container" style="display:flex; justify-content:space-between; align-items:center;">
-		<h2 style="color:#e7eefc; margin:0;">Events</h2>
-		<a href="{{ url_for('events.create_event') }}" class="btn">Create Event</a>
-	</div>
-</header>
+{% block title %}Events | Anveshan{% endblock %}
 
-<div class="container">
-	<div class="card" style="margin-top:16px;">
-		<div class="dashboard">
-			{% if events and events|length > 0 %}
-				{% for event in events %}
-					<div class="event-card">
-						<h3 style="color:#e7eefc;">{{ event.title }}</h3>
-						{% if event.deadline %}
-							<p><strong>Deadline:</strong> {{ event.deadline }}</p>
-						{% endif %}
-						<p><strong>Organizer:</strong> {{ event.club_name or event.organiser or 'N/A' }}</p>
-						<a href="{{ url_for('events.open_registration_form', event_id=event.id) }}" class="btn">Register</a>
-					</div>
-				{% endfor %}
-			{% else %}
-				<p style="color:#d6e6ff;">No events found.</p>
-			{% endif %}
-		</div>
-	</div>
+{% block page_content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+            <h1 class="fw-bold mb-2">Explore Events</h1>
+            <p class="text-muted mb-0">Discover workshops, hackathons, and seminars happening around you.</p>
+        </div>
+        <!-- Optional: Add filter toggle or simple search here later -->
+    </div>
+
+    {% if events and events|length > 0 %}
+        <div class="row g-4">
+            {% for event in events %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card border-0 shadow-sm h-100 event-card hover-card">
+                        <div class="position-relative">
+                            <!-- Placeholder Image -->
+                            <div class="bg-light d-flex align-items-center justify-content-center rounded-top" style="height: 200px; background: linear-gradient(45deg, #1C4980, #0073e6);">
+                                <i class="bi bi-calendar-event text-white-50" style="font-size: 4rem;"></i>
+                            </div>
+                            <span class="position-absolute top-0 end-0 m-3 badge bg-white text-primary shadow-sm fs-6">
+                                {{ event.event_type|upper if event.event_type else 'EVENT' }}
+                            </span>
+                        </div>
+                        <div class="card-body p-4 d-flex flex-column">
+                            <h4 class="card-title fw-bold mb-3 text-dark">{{ event.title }}</h4>
+                            
+                            <div class="d-flex flex-column gap-2 mb-4">
+                                <div class="d-flex align-items-center text-muted">
+                                    <i class="bi bi-building me-2 text-primary"></i>
+                                    <span class="text-truncate">{{ event.organizer or event.club_name or 'Unknown Organizer' }}</span>
+                                </div>
+                                <div class="d-flex align-items-center text-muted">
+                                    <i class="bi bi-clock me-2 text-primary"></i>
+                                    <span>{{ event.event_date or 'Date TBA' }}</span>
+                                </div>
+                                <div class="d-flex align-items-center text-muted">
+                                    <i class="bi bi-geo-alt me-2 text-primary"></i>
+                                    <span>{{ event.mode|title if event.mode else 'N/A' }}</span>
+                                </div>
+                                {% if event.deadline %}
+                                <div class="d-flex align-items-center text-muted small mt-2">
+                                    <i class="bi bi-exclamation-circle me-2 text-danger"></i>
+                                    <span class="text-danger">Deadline: {{ event.deadline }}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mt-auto pt-3 border-top">
+                                <div class="d-flex gap-2">
+                                    <a href="{{ url_for('events.open_registration_form', event_id=event.id) }}" class="btn btn-primary w-100 fw-medium">Register Now</a>
+                                    <a href="{{ url_for('events.event_questions', event_id=event.id) }}" class="btn btn-outline-primary" title="Ask Question">
+                                        <i class="bi bi-chat-dots"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center py-5">
+            <div class="mb-3">
+                <i class="bi bi-calendar-x text-muted" style="font-size: 4rem;"></i>
+            </div>
+            <h3 class="text-muted fw-bold">No Events Found</h3>
+            <p class="text-muted">There are no upcoming events at the moment. Please check back later.</p>
+        </div>
+    {% endif %}
 </div>
 
-</body>
-</html>
+<style>
+    .hover-card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .hover-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
+    }
+</style>
+{% endblock %}
