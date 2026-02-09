@@ -33,20 +33,27 @@ def generate_otp():
 def hash_otp(email, code):
     return hashlib.sha256((email.lower().strip() + ":" + code).encode()).hexdigest()
 def ensure_otp_table_exists():
-    c = db.cursor()
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS otp_codes (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            email VARCHAR(255) NOT NULL,
-            code_hash VARCHAR(255) NOT NULL,
-            purpose ENUM('password_reset','registration') NOT NULL,
-            expires_at DATETIME NOT NULL,
-            used TINYINT(1) DEFAULT 0,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-    """)
-    db.commit()
-    c.close()
+    try:
+        c = db.cursor()
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS otp_codes (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                email VARCHAR(255) NOT NULL,
+                code_hash VARCHAR(255) NOT NULL,
+                purpose ENUM('password_reset','registration') NOT NULL,
+                expires_at DATETIME NOT NULL,
+                used TINYINT(1) DEFAULT 0,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        db.commit()
+        c.close()
+    except Exception as e:
+        try:
+            db.rollback()
+        except Exception:
+            pass
+        current_app.logger.error("ensure_otp_table_exists failed: %s", e)
 
 # ------------------- LOGIN -------------------
 @auth_bp.route('/login', methods=['GET', 'POST'])
@@ -143,19 +150,18 @@ def request_registration_otp():
     if not is_college_email(email):
         flash("Please use your college email address.", "warning")
         return redirect(url_for('auth.register'))
-    # if already registered, stop
-    c0 = db.cursor()
-    c0.execute("SELECT id FROM users WHERE email=%s", (email,))
-    exists_user = c0.fetchone()
-    c0.close()
-    if exists_user:
-        flash("Email already registered. Please login.", "info")
-        return redirect(url_for('auth.login'))
-    code = generate_otp()
-    h = hash_otp(email, code)
-    expires = datetime.now() + timedelta(minutes=10)
-    ensure_otp_table_exists()
     try:
+        c0 = db.cursor()
+        c0.execute("SELECT id FROM users WHERE email=%s", (email,))
+        exists_user = c0.fetchone()
+        c0.close()
+        if exists_user:
+            flash("Email already registered. Please login.", "info")
+            return redirect(url_for('auth.login'))
+        code = generate_otp()
+        h = hash_otp(email, code)
+        expires = datetime.now() + timedelta(minutes=10)
+        ensure_otp_table_exists()
         c = db.cursor()
         c.execute("""
             INSERT INTO otp_codes (email, code_hash, purpose, expires_at)
@@ -164,9 +170,16 @@ def request_registration_otp():
         db.commit()
         c.close()
     except Error as e:
-        db.rollback()
-        current_app.logger.error("OTP insert failed: %s", e)
-        flash("Temporary server issue while generating OTP. Please try again.", "danger")
+        try:
+            db.rollback()
+        except Exception:
+            pass
+        current_app.logger.error("Registration OTP DB error: %s", e)
+        flash("Database error while generating OTP. Please try again in a few minutes.", "danger")
+        return redirect(url_for('auth.register'))
+    except Exception as e:
+        current_app.logger.error("Registration OTP unexpected error: %s", e)
+        flash("Unexpected server error while generating OTP. Please try again later.", "danger")
         return redirect(url_for('auth.register'))
     missing = smtp_missing_keys()
     if missing:
