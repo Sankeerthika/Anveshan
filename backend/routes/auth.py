@@ -32,6 +32,21 @@ def generate_otp():
     return f"{random.randint(100000, 999999)}"
 def hash_otp(email, code):
     return hashlib.sha256((email.lower().strip() + ":" + code).encode()).hexdigest()
+def ensure_otp_table_exists():
+    c = db.cursor()
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS otp_codes (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            email VARCHAR(255) NOT NULL,
+            code_hash VARCHAR(255) NOT NULL,
+            purpose ENUM('password_reset','registration') NOT NULL,
+            expires_at DATETIME NOT NULL,
+            used TINYINT(1) DEFAULT 0,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    db.commit()
+    c.close()
 
 # ------------------- LOGIN -------------------
 @auth_bp.route('/login', methods=['GET', 'POST'])
@@ -117,8 +132,10 @@ def register():
 
     return render_template('register.html')
 
-@auth_bp.route('/register/request-otp', methods=['POST'])
+@auth_bp.route('/register/request-otp', methods=['GET', 'POST'])
 def request_registration_otp():
+    if request.method == 'GET':
+        return redirect(url_for('auth.register'))
     email = request.form.get('email', '').strip()
     if not email:
         flash("Enter email to send OTP.", "warning")
@@ -137,13 +154,20 @@ def request_registration_otp():
     code = generate_otp()
     h = hash_otp(email, code)
     expires = datetime.now() + timedelta(minutes=10)
-    c = db.cursor()
-    c.execute("""
-        INSERT INTO otp_codes (email, code_hash, purpose, expires_at)
-        VALUES (%s,%s,'registration',%s)
-    """, (email, h, expires.strftime('%Y-%m-%d %H:%M:%S')))
-    db.commit()
-    c.close()
+    ensure_otp_table_exists()
+    try:
+        c = db.cursor()
+        c.execute("""
+            INSERT INTO otp_codes (email, code_hash, purpose, expires_at)
+            VALUES (%s,%s,'registration',%s)
+        """, (email, h, expires.strftime('%Y-%m-%d %H:%M:%S')))
+        db.commit()
+        c.close()
+    except Error as e:
+        db.rollback()
+        current_app.logger.error("OTP insert failed: %s", e)
+        flash("Temporary server issue while generating OTP. Please try again.", "danger")
+        return redirect(url_for('auth.register'))
     missing = smtp_missing_keys()
     if missing:
         flash(f"Email sending misconfigured: {', '.join(missing)} not set.", "danger")
