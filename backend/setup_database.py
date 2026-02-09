@@ -406,6 +406,21 @@ def setup_tables():
     except Exception:
         pass
 
+    try:
+        db_name = os.getenv("DB_NAME", "anveshan")
+        cursor.execute(f"ALTER DATABASE {db_name} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci")
+    except Exception:
+        pass
+    for t in [
+        "users","events","otp_codes","personal_projects","project_requests","follows","project_comments",
+        "faculty_collaborations","collaboration_requests","event_registrations","event_team_members",
+        "clubs","club_announcements","team_requests","join_requests"
+    ]:
+        try:
+            cursor.execute(f"ALTER TABLE {t} CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci")
+        except Exception:
+            pass
+
     conn.commit()
     cursor.close()
     conn.close()

@@ -1,30 +1,27 @@
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from flask import Flask, render_template, redirect, url_for, session
 from datetime import datetime, date
-from routes.auth import auth_bp
-from routes.events import events_bp
-from routes.club import club_bp
-from routes.find_team import find_team_bp
-from routes.student import student_bp
-from routes.collaboration import collaboration_bp
-from db import db
+from backend.routes.auth import auth_bp
+from backend.routes.events import events_bp
+from backend.routes.club import club_bp
+from backend.routes.find_team import find_team_bp
+from backend.routes.student import student_bp
+from backend.routes.collaboration import collaboration_bp
+from backend.db import db
 import os
 from dotenv import load_dotenv
+from backend.config import SMTP_CONFIG, APP_CONFIG
 
 # Load environment variables
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.getenv("SECRET_KEY", "dev_secret_key_change_in_production")
+app.secret_key = APP_CONFIG.get("SECRET_KEY")
 app.config['TEMPLATES_AUTO_RELOAD'] = True  # Auto-reload templates
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0  # Prevent caching of static files
 
-app.config.update({
-    "SMTP_HOST": os.environ.get("SMTP_HOST"),
-    "SMTP_PORT": os.environ.get("SMTP_PORT") or 587,
-    "SMTP_USER": os.environ.get("SMTP_USER"),
-    "SMTP_PASSWORD": os.environ.get("SMTP_PASSWORD"),
-    "SMTP_TLS": str(os.environ.get("SMTP_TLS", "true")).lower() in ("1", "true", "yes", "on"),
-})
+app.config.update(SMTP_CONFIG)
 app.logger.info(
     "SMTP config: HOST=%s USER=%s TLS=%s",
     app.config.get("SMTP_HOST"),

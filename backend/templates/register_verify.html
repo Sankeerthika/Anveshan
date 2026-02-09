@@ -1,0 +1,54 @@
+{% extends "auth_base.html" %}
+
+{% block title %}Verify OTP - Anveshan{% endblock %}
+
+{% block hero_quote %}
+Verify Email,<br>
+Set Your Password.
+{% endblock %}
+
+{% block hero_desc %}
+Enter the OTP sent to your college email, then choose a password to complete registration.
+{% endblock %}
+
+{% block form_content %}
+<h2 class="form-title">Email Verification</h2>
+<p class="form-subtitle">We sent an OTP to your email. Check your inbox (and spam).</p>
+
+<form method="post" action="{{ url_for('auth.register_verify') }}">
+    <div class="form-floating mb-3">
+        <input type="text" class="form-control" id="name" name="name" placeholder="Full Name" required>
+        <label for="name">Full Name</label>
+    </div>
+
+    <div class="form-floating mb-3">
+        <input type="email" class="form-control" id="email" name="email" placeholder="name@example.com" value="{{ email or '' }}" required>
+        <label for="email">College Email</label>
+    </div>
+
+    <div class="form-floating mb-3">
+        <input type="text" class="form-control" id="otp" name="otp" placeholder="6-digit code" required>
+        <label for="otp">OTP</label>
+    </div>
+
+    <div class="form-floating mb-3">
+        <input type="password" class="form-control" id="password" name="password" placeholder="Create Password" minlength="6" required>
+        <label for="password">Create Password</label>
+    </div>
+
+    <div class="form-floating mb-3">
+        <select class="form-select" id="role" name="role">
+            <option value="student" selected>Student</option>
+            <option value="faculty">Faculty</option>
+            <option value="club">Club/Organization</option>
+        </select>
+        <label for="role">I am a...</label>
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-primary-custom">Complete Registration</button>
+</form>
+
+<div class="text-center mt-4">
+    <p class="text-secondary">Didn’t receive OTP? <a href="{{ url_for('auth.register') }}" style="color: var(--secondary-color); font-weight: 700; text-decoration: none;">Request again</a></p>
+</div>
+{% endblock %}

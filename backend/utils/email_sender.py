@@ -33,6 +33,10 @@ def send_email(to_email, subject, body):
         return True
     except Exception as e:
         current_app.logger.error("SMTP failed: %s", e)
+        try:
+            current_app.config["SMTP_LAST_ERROR"] = str(e)
+        except Exception:
+            pass
         return False
 
 def smtp_missing_keys():

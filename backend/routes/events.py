@@ -1,5 +1,5 @@
 from flask import Blueprint, request, redirect, url_for, flash, session, render_template, Response, current_app
-from db import db
+from backend.db import db
 import os
 import csv
 from datetime import datetime
@@ -24,7 +24,7 @@ def is_college_email(email: str) -> bool:
     except Exception:
         return False
 events_bp = Blueprint('events', __name__)
-from routes.club import club_bp
+from backend.routes.club import club_bp
 
 # Ensure uploads directory exists
 UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'static', 'uploads')

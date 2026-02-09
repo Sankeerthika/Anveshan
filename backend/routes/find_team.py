@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, current_app
-from db import db
+from backend.db import db
 
 find_team_bp = Blueprint('find_team', __name__)
 
@@ -60,7 +60,7 @@ def find_team():
     events = cursor.fetchall()
 
     # Build like-minded filter based on student's skills/interests and profile
-    from utils.skills import expand_skills
+    from backend.utils.skills import expand_skills
     skills_str = str(user.get('skills') or '')
     interests_str = str(user.get('interests') or '')
     initial_terms = [t.strip().lower() for t in (skills_str.split(',') + interests_str.split(',')) if t.strip()]

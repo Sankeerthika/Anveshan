@@ -12,6 +12,9 @@
             <a href="{{ url_for('club.post_announcement_page') }}" class="btn btn-primary">
                 <i class="bi bi-megaphone me-2"></i>Post Announcement
             </a>
+            <a href="{{ url_for('club.edit_announcements_page') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-pencil-square me-2"></i>Edit Announcements
+            </a>
             <a href="{{ url_for('club.club_questions') }}" class="btn btn-outline-primary">
                 <i class="bi bi-question-circle me-2"></i>Inquiries
             </a>
@@ -95,11 +98,11 @@
                             {% for q in recent_questions %}
                                 <tr>
                                     <td class="text-muted small">{{ q.created_at.strftime('%Y-%m-%d') }}</td>
-                                    <td class="fw-medium">{{ q.student_name }}</td>
+                                    <td class="fw-medium">{{ q.student_name or q.student_email }}</td>
                                     <td>{{ q.event_title }}</td>
                                     <td class="text-truncate" style="max-width: 200px;">{{ q.question_text }}</td>
                                     <td>
-                                        {% if q.answer_text %}
+                                        {% if q.status == 'answered' %}
                                             <span class="badge bg-success-subtle text-success rounded-pill">Answered</span>
                                         {% else %}
                                             <span class="badge bg-warning-subtle text-warning rounded-pill">Pending</span>

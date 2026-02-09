@@ -1,10 +1,10 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
-from db import db
+from backend.db import db
 import os
 from werkzeug.utils import secure_filename
 import re
 from datetime import datetime, date
-from utils.skills import expand_skills, all_known_terms
+from backend.utils.skills import expand_skills, all_known_terms
 
 collaboration_bp = Blueprint('collaboration', __name__)
 

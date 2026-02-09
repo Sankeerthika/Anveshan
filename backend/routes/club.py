@@ -1,8 +1,9 @@
 from flask import Blueprint, render_template, session, redirect, url_for, request, flash
-from db import db
+from backend.db import db
 from datetime import datetime, timedelta
 import os
 from werkzeug.utils import secure_filename
+from flask import current_app
 
 club_bp = Blueprint('club', __name__)
 
@@ -111,11 +112,12 @@ def club_dashboard():
 
         # Get recent questions (last 30 days)
         cursor.execute("""
-            SELECT q.*, e.title AS event_title, e.event_type
+            SELECT q.*, e.title AS event_title, e.event_type, u.name AS student_name
             FROM event_questions q
             JOIN events e ON q.event_id = e.id
+            LEFT JOIN users u ON u.email = q.student_email
             WHERE e.created_by = %s
-            AND q.created_at >= %s
+              AND q.created_at >= %s
             ORDER BY q.created_at DESC
             LIMIT 5
         """, (club_id, (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')))
@@ -161,7 +163,7 @@ def post_announcement():
     description = request.form.get('description') or None
     registration_end_date = request.form.get('registration_end_date') or None
     external_registration_link = request.form.get('external_registration_link') or None
-    target_years_list = request.form.getlist('target_years[]')
+    target_years_list = request.form.getlist('target_years')
     target_years = ",".join(target_years_list) if target_years_list else None
 
     if not title or not external_registration_link or not registration_end_date:
@@ -196,7 +198,10 @@ def post_announcement():
     except Exception as e:
         db.rollback()
         print(f"Error posting announcement: {e}")
-        flash("Error posting announcement. Please try again.", "danger")
+        if current_app.debug:
+            flash(f"Error posting announcement: {e}", "danger")
+        else:
+            flash("Error posting announcement. Please try again.", "danger")
     finally:
         cursor.close()
 
@@ -263,9 +268,24 @@ def edit_announcements_page():
             {order_clause}
         """, tuple(params))
         events = cursor.fetchall()
+        hackathons = []
+        for e in events or []:
+            tys = e.get('target_years') or ""
+            if isinstance(tys, str):
+                years = [t.strip() for t in tys.split(",") if t.strip()]
+            else:
+                years = []
+            hackathons.append({
+                "id": e.get("id"),
+                "title": e.get("title"),
+                "event_type": e.get("event_type"),
+                "deadline": e.get("deadline"),
+                "external_registration_link": e.get("external_registration_link"),
+                "target_years": years,
+            })
         cursor.execute("SELECT name FROM clubs WHERE id = %s", (club_id,))
         club = cursor.fetchone() or {'name': 'Club'}
-        return render_template('edit_announcements.html', events=events, club=club)
+        return render_template('edit_announcements.html', hackathons=hackathons, club=club)
     except Exception as e:
         print(f"Error loading edit announcements: {e}")
         flash("Error loading active hackathons.", "danger")
@@ -322,7 +342,7 @@ def update_announcement(event_id):
     description = request.form.get('description') or None
     registration_end_date = request.form.get('registration_end_date') or None
     external_registration_link = request.form.get('external_registration_link') or None
-    target_years_list = request.form.getlist('target_years[]')
+    target_years_list = request.form.getlist('target_years')
     target_years = ",".join(target_years_list) if target_years_list else None
     if not title or not external_registration_link or not registration_end_date:
         flash("Please provide title, registration end date and registration link.", "danger")
@@ -348,7 +368,10 @@ def update_announcement(event_id):
     except Exception as e:
         db.rollback()
         print(f"Error updating announcement: {e}")
-        flash("Error updating hackathon.", "danger")
+        if current_app.debug:
+            flash(f"Error updating hackathon: {e}", "danger")
+        else:
+            flash("Error updating hackathon.", "danger")
     finally:
         cursor.close()
     return redirect(url_for('club.edit_announcements_page'))

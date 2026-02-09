@@ -1,9 +1,9 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
-from db import db
+from backend.db import db
 import os
 from werkzeug.utils import secure_filename
 from datetime import datetime, date
-from utils.skills import expand_skills
+from backend.utils.skills import expand_skills
 
 student_bp = Blueprint('student', __name__)
 

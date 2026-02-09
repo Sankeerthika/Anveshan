@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, current_app
-from db import db
+from backend.db import db
 from mysql.connector import Error
 import os
 import hashlib
@@ -9,8 +9,8 @@ import ssl
 from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
-from utils.email_sender import send_email, smtp_missing_keys
-from utils.env_manager import update_env_file
+from backend.utils.email_sender import send_email, smtp_missing_keys
+from backend.utils.env_manager import update_env_file
 
 load_dotenv()
 
@@ -109,76 +109,11 @@ def login():
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        name = request.form.get('name', '').strip()
         email = request.form.get('email', '').strip()
-        password = request.form.get('password', '').strip()
-        role = request.form.get('role', 'student')
-        allowed_roles = {'student', 'club', 'faculty'}
-        if role not in allowed_roles:
-            role = 'student'
-
-        if not name or not email or not password:
-            flash("All fields are required", "danger")
+        if not email:
+            flash("Enter your email to request OTP.", "danger")
             return redirect(url_for('auth.register'))
-
-        if role in {'student', 'faculty'} and not is_college_email(email):
-            flash("Please register using your college email address (e.g., name@college.ac.in or name@college.edu).", "warning")
-            return redirect(url_for('auth.register'))
-
-        cursor2 = db.cursor()
-        try:
-            hashed_password = generate_password_hash(password)
-            cursor2.execute(
-                "INSERT INTO users (name, email, password, role) VALUES (%s, %s, %s, %s)",
-                (name, email, hashed_password, role)
-            )
-            db.commit()
-            flash("Registration successful! Please login.", "success")
-            return redirect(url_for('auth.login'))
-
-        except Error as e:
-            try:
-                current_app.logger.error(f"Registration error for {email}: errno={getattr(e, 'errno', None)} msg={str(e)}")
-            except Exception:
-                pass
-            retriable = ("Connection not available" in str(e)) or (getattr(e, "errno", None) in (2006, 2013))
-            if retriable:
-                try:
-                    cursor2 = db.cursor()
-                    hashed_password = generate_password_hash(password)
-                    cursor2.execute(
-                        "INSERT INTO users (name, email, password, role) VALUES (%s, %s, %s, %s)",
-                        (name, email, hashed_password, role)
-                    )
-                    db.commit()
-                    cursor2.close()
-                    flash("Registration successful! Please login.", "success")
-                    return redirect(url_for('auth.login'))
-                except Error as e2:
-                    try:
-                        current_app.logger.error(f"Registration retry failed for {email}: errno={getattr(e2, 'errno', None)} msg={str(e2)}")
-                    except Exception:
-                        pass
-                    if getattr(e2, "errno", None) == 1062:
-                        flash("Email already registered", "warning")
-                    else:
-                        flash(f"Something went wrong (DB error {getattr(e2, 'errno', 'unknown')}): {str(e2)}", "danger")
-                    return redirect(url_for('auth.register'))
-            if getattr(e, "errno", None) == 1062:
-                flash("Email already registered", "warning")
-            else:
-                flash(f"Something went wrong (DB error {getattr(e, 'errno', 'unknown')}): {str(e)}", "danger")
-            return redirect(url_for('auth.register'))
-        except Exception as e:
-            try:
-                current_app.logger.error(f"Registration unexpected error for {email}: {str(e)}")
-            except Exception:
-                pass
-            flash(f"Unexpected error: {str(e)}", "danger")
-            return redirect(url_for('auth.register'))
-
-        finally:
-            cursor2.close()
+        return redirect(url_for('auth.request_registration_otp'))
 
     return render_template('register.html')
 
@@ -188,6 +123,17 @@ def request_registration_otp():
     if not email:
         flash("Enter email to send OTP.", "warning")
         return redirect(url_for('auth.register'))
+    if not is_college_email(email):
+        flash("Please use your college email address.", "warning")
+        return redirect(url_for('auth.register'))
+    # if already registered, stop
+    c0 = db.cursor()
+    c0.execute("SELECT id FROM users WHERE email=%s", (email,))
+    exists_user = c0.fetchone()
+    c0.close()
+    if exists_user:
+        flash("Email already registered. Please login.", "info")
+        return redirect(url_for('auth.login'))
     code = generate_otp()
     h = hash_otp(email, code)
     expires = datetime.now() + timedelta(minutes=10)
@@ -198,14 +144,74 @@ def request_registration_otp():
     """, (email, h, expires.strftime('%Y-%m-%d %H:%M:%S')))
     db.commit()
     c.close()
+    missing = smtp_missing_keys()
+    if missing:
+        flash(f"Email sending misconfigured: {', '.join(missing)} not set.", "danger")
+        return redirect(url_for('auth.register_verify', email=email))
     sent = send_email(email, "Your Anveshan Registration OTP", f"Your OTP is {code}. It expires in 10 minutes.")
     if sent:
-        flash("OTP sent to your email.", "info")
+        flash("OTP sent to your email. Enter it to set your password.", "info")
     else:
         # Don't expose config errors to user, just generic error
-        flash("Unable to send email. Please try again later or contact support.", "danger")
+        err = current_app.config.get("SMTP_LAST_ERROR")
+        if current_app.debug and err:
+            flash(f"Email failed: {err}", "danger")
+        else:
+            flash("Unable to send email. Please try again later or contact support.", "danger")
         current_app.logger.error("Failed to send registration OTP to %s. Check SMTP config.", email)
-    return redirect(url_for('auth.register'))
+    return redirect(url_for('auth.register_verify', email=email))
+
+@auth_bp.route('/register/verify', methods=['GET', 'POST'])
+def register_verify():
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        email = request.form.get('email', '').strip()
+        otp = request.form.get('otp', '').strip()
+        password = request.form.get('password', '').strip()
+        role = request.form.get('role', 'student')
+        allowed_roles = {'student', 'club', 'faculty'}
+        if role not in allowed_roles:
+            role = 'student'
+        if not name or not email or not otp or not password:
+            flash("Enter name, email, OTP, and password.", "danger")
+            return redirect(url_for('auth.register_verify', email=email))
+        if role in {'student', 'faculty'} and not is_college_email(email):
+            flash("Please use your college email address.", "warning")
+            return redirect(url_for('auth.register_verify', email=email))
+        cur = db.cursor(dictionary=True)
+        cur.execute("""
+            SELECT id, expires_at, used FROM otp_codes
+            WHERE email=%s AND purpose='registration' AND code_hash=%s
+            ORDER BY id DESC LIMIT 1
+        """, (email, hash_otp(email, otp)))
+        row = cur.fetchone()
+        if not row or row['used'] == 1 or row['expires_at'] < datetime.now():
+            cur.close()
+            flash("Invalid or expired OTP.", "danger")
+            return redirect(url_for('auth.register_verify', email=email))
+        c2 = db.cursor()
+        try:
+            hashed_password = generate_password_hash(password)
+            c2.execute(
+                "INSERT INTO users (name, email, password, role) VALUES (%s, %s, %s, %s)",
+                (name, email, hashed_password, role)
+            )
+            cur.execute("UPDATE otp_codes SET used=1 WHERE id=%s", (row['id'],))
+            db.commit()
+            flash("Registration successful! Please login.", "success")
+            return redirect(url_for('auth.login'))
+        except Error as e:
+            db.rollback()
+            if getattr(e, "errno", None) == 1062:
+                flash("Email already registered", "warning")
+            else:
+                flash(f"Registration error: {str(e)}", "danger")
+            return redirect(url_for('auth.register_verify', email=email))
+        finally:
+            c2.close()
+            cur.close()
+    email = request.args.get('email', '')
+    return render_template('register_verify.html', email=email)
 
 @auth_bp.route('/forgot-password', methods=['GET', 'POST'])
 def forgot_password():
@@ -231,12 +237,20 @@ def forgot_password():
         """, (email, h, expires.strftime('%Y-%m-%d %H:%M:%S')))
         db.commit()
         c.close()
+        missing = smtp_missing_keys()
+        if missing:
+            flash(f"Email sending misconfigured: {', '.join(missing)} not set.", "danger")
+            return redirect(url_for('auth.reset_password', email=email))
         sent = send_email(email, "Your Anveshan Password Reset OTP", f"Your OTP is {code}. It expires in 10 minutes.")
         if sent:
             flash("OTP sent to your email.", "info")
             return redirect(url_for('auth.reset_password', email=email))
         else:
-            flash("Unable to send email. Please try again later.", "danger")
+            err = current_app.config.get("SMTP_LAST_ERROR")
+            if current_app.debug and err:
+                flash(f"Email failed: {err}", "danger")
+            else:
+                flash("Unable to send email. Please try again later.", "danger")
             current_app.logger.error("Failed to send password reset OTP to %s. Check SMTP config.", email)
             return redirect(url_for('auth.forgot_password'))
     return render_template('forgot_password.html')
