@@ -81,7 +81,7 @@
                     {% endif %}
 
                     <!-- Find Team -->
-                    {% if session.get('role') != 'club' %}
+                    {% if session.get('role') == 'student' %}
                     <li>
                         <a href="{{ url_for('find_team.find_team') }}" class="sidebar-link {{ 'active' if request.endpoint in ['find_team.find_team','find_team.join_team','find_team.my_team_requests','find_team.my_join_requests'] else '' }}">
                             <i class="bi bi-people-fill"></i>
