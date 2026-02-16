@@ -16,7 +16,9 @@ SMTP_CONFIG = {
     "SMTP_PORT": int(os.getenv("SMTP_PORT", 587)),
     "SMTP_USER": os.getenv("SMTP_USER"),
     "SMTP_PASSWORD": os.getenv("SMTP_PASSWORD"),
-    "SMTP_TLS": str(os.getenv("SMTP_TLS", "true")).lower() in ("1", "true", "yes", "on")
+    "SMTP_TLS": str(os.getenv("SMTP_TLS", "true")).lower() in ("1", "true", "yes", "on"),
+    "SMTP_TIMEOUT": float(os.getenv("SMTP_TIMEOUT", "7")),
+    "SMTP_STRICT": str(os.getenv("SMTP_STRICT", "false")).lower() in ("1", "true", "yes", "on")
 }
 
 APP_CONFIG = {
