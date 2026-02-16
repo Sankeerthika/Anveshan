@@ -619,6 +619,7 @@ def faculty_dashboard():
         JOIN faculty_collaborations fc ON cr.collaboration_id = fc.id
         JOIN users u ON cr.user_id = u.id
         WHERE fc.faculty_id = %s AND cr.status = 'pending'
+          AND (cr.message IS NULL OR cr.message NOT LIKE 'Invitation from owner%%')
         ORDER BY cr.created_at DESC
     """, (session['user_id'],))
     incoming_requests = cursor.fetchall()
@@ -661,8 +662,9 @@ def faculty_dashboard():
     """, (session['user_id'],))
     my_participations = cursor.fetchall()
 
+    my_collaborations = active_collabs + closed_collabs
     cursor.close()
-    return render_template('faculty_dashboard.html', user=user, active_collabs=active_collabs, closed_collabs=closed_collabs, requests=incoming_requests, my_invites=my_invites, my_participations=my_participations)
+    return render_template('faculty_dashboard.html', user=user, active_collabs=active_collabs, closed_collabs=closed_collabs, requests=incoming_requests, my_invites=my_invites, my_participations=my_participations, my_collaborations=my_collaborations)
 
 @collaboration_bp.route('/faculty/invitation/<int:req_id>/respond/<action>', methods=['POST'])
 def respond_invitation(req_id, action):
@@ -781,6 +783,94 @@ def create_faculty_collaboration():
     cursor.close()
     return render_template('create_faculty_collaboration.html', user=user)
 
+@collaboration_bp.route('/faculty/collaboration/<int:collab_id>/edit', methods=['GET', 'POST'])
+def edit_faculty_collaboration(collab_id):
+    if 'user_id' not in session:
+        return redirect(url_for('auth.login'))
+    cursor = db.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM users WHERE id = %s", (session['user_id'],))
+    user = cursor.fetchone()
+    cursor.execute("SELECT * FROM faculty_collaborations WHERE id = %s", (collab_id,))
+    collab = cursor.fetchone()
+    if not user or user['role'] != 'faculty' or not collab or collab['faculty_id'] != session['user_id']:
+        cursor.close()
+        flash("Unauthorized.", "danger")
+        return redirect(url_for('collaboration.community'))
+    if request.method == 'POST':
+        title = (request.form.get('title') or '').strip()
+        description = (request.form.get('description') or '').strip()
+        collab_type = (request.form.get('type') or 'article').strip()
+        audience = (request.form.get('audience') or 'faculty_only').strip()
+        apply_deadline_str = (request.form.get('apply_deadline') or '').strip()
+        apply_deadline = None
+        if apply_deadline_str:
+            try:
+                d = datetime.strptime(apply_deadline_str, "%Y-%m-%d")
+                apply_deadline = d.replace(hour=23, minute=59, second=59)
+            except Exception:
+                apply_deadline = None
+        try:
+            max_students = int(request.form.get('max_students') or 0)
+        except ValueError:
+            max_students = 0
+        try:
+            max_faculty = int(request.form.get('max_faculty') or 0)
+        except ValueError:
+            max_faculty = 0
+        required_skills_must = (request.form.get('required_skills_must') or '').strip()
+        required_skills_nice = (request.form.get('required_skills_nice') or '').strip()
+        strict_raw = (request.form.get('strict_visibility') or '').strip().lower()
+        strict_visibility = 1 if strict_raw in ('on', '1', 'true', 'yes') else 0
+        required_skills = ", ".join([s for s in [required_skills_must, required_skills_nice] if s.strip()])
+        try:
+            cursor.execute("SHOW COLUMNS FROM faculty_collaborations")
+            cols = [c['Field'] if isinstance(c, dict) else c[0] for c in cursor.fetchall()]
+            available = set(cols)
+            set_parts = [
+                "title=%s",
+                "description=%s",
+                "collaboration_type=%s",
+                "audience=%s",
+                "max_students=%s",
+                "max_faculty=%s",
+                "required_skills=%s"
+            ]
+            values = [title, description, collab_type, audience, max_students, max_faculty, required_skills]
+            if 'apply_deadline' in available:
+                set_parts.append("apply_deadline=%s")
+                values.append(apply_deadline)
+            if 'required_skills_must' in available:
+                set_parts.append("required_skills_must=%s")
+                values.append(required_skills_must)
+            elif 'must_have_skills' in available:
+                set_parts.append("must_have_skills=%s")
+                values.append(required_skills_must)
+            if 'required_skills_nice' in available:
+                set_parts.append("required_skills_nice=%s")
+                values.append(required_skills_nice)
+            elif 'nice_to_have_skills' in available:
+                set_parts.append("nice_to_have_skills=%s")
+                values.append(required_skills_nice)
+            if 'strict_visibility' in available:
+                set_parts.append("strict_visibility=%s")
+                values.append(strict_visibility)
+            elif 'hide_non_matching' in available:
+                set_parts.append("hide_non_matching=%s")
+                values.append(strict_visibility)
+            set_sql = ", ".join(set_parts)
+            values.extend([collab_id, session['user_id']])
+            cursor.execute(f"UPDATE faculty_collaborations SET {set_sql} WHERE id=%s AND faculty_id=%s", tuple(values))
+            db.commit()
+            flash("Collaboration updated successfully!", "success")
+            cursor.close()
+            return redirect(url_for('collaboration.faculty_collaboration_details', collab_id=collab_id))
+        except Exception as e:
+            db.rollback()
+            print(f"Error updating faculty collab: {e}")
+            flash("Error updating collaboration.", "danger")
+    cursor.close()
+    return render_template('create_faculty_collaboration.html', user=user, is_edit=True, collab=collab)
+
 @collaboration_bp.route('/faculty/collaboration/<int:collab_id>')
 def faculty_collaboration_details(collab_id):
     if 'user_id' not in session:
@@ -872,6 +962,7 @@ def faculty_collaboration_details(collab_id):
 
     # Recommended faculty (for owner)
     recommended_faculty = []
+    recommended_students = []
     if user['id'] == collab['faculty_id']:
         req_must = [s.strip().lower() for s in (collab.get('required_skills_must') or collab.get('must_have_skills') or "").split(',') if s.strip()]
         req_nice = [s.strip().lower() for s in (collab.get('required_skills_nice') or collab.get('nice_to_have_skills') or "").split(',') if s.strip()]
@@ -936,20 +1027,73 @@ def faculty_collaboration_details(collab_id):
         candidates.sort(key=_calc, reverse=True)
         recommended_faculty = candidates[:6]
         temp_cursor.close()
+        if collab.get('audience') in ('students_only', 'both'):
+            kws_s = req_must + req_nice + req_all
+            params_s = [user['id']]
+            where_parts_s = []
+            for k in kws_s:
+                where_parts_s.append("LOWER(skills) LIKE %s OR LOWER(interests) LIKE %s")
+                params_s.extend([f"%{k}%", f"%{k}%"])
+            base_s = "SELECT id, name, skills, interests, profile_photo FROM users WHERE role='student' AND id != %s"
+            if where_parts_s:
+                base_s += " AND (" + " OR ".join(where_parts_s) + ")"
+            base_s += " LIMIT 12"
+            temp2 = db.cursor(dictionary=True)
+            temp2.execute(base_s, tuple(params_s))
+            cand_s = temp2.fetchall()
+            def _calc_s(u):
+                us = []
+                if u.get('skills'):
+                    base = [s.strip().lower() for s in str(u['skills']).split(',') if s.strip()]
+                    us.extend(_expand_split(base))
+                if u.get('interests'):
+                    base_i = [s.strip().lower() for s in str(u['interests']).split(',') if s.strip()]
+                    us.extend(_expand_split(base_i))
+                us_exp = set(expand_skills(us))
+                must_matches = 0
+                for k in req_must:
+                    if set(expand_skills([k])) & us_exp:
+                        must_matches += 1
+                nice_matches = 0
+                for k in req_nice:
+                    if set(expand_skills([k])) & us_exp:
+                        nice_matches += 1
+                gen_matches = 0
+                for k in req_all:
+                    if set(expand_skills([k])) & us_exp:
+                        gen_matches += 1
+                score = must_matches * 2 + nice_matches + gen_matches
+                total = len(req_must) * 2 + len(req_nice) + len(req_all)
+                percent = int(round(100 * score / total)) if total > 0 else 0
+                u['match_percent'] = percent
+                return score
+            cand_s.sort(key=_calc_s, reverse=True)
+            recommended_students = cand_s[:8]
+            temp2.close()
 
     # Check eligibility to apply
     can_apply = True
     rejection_reason = None
 
-    # 1. Check if already applied
-    cursor.execute("SELECT status FROM collaboration_requests WHERE collaboration_id = %s AND user_id = %s", (collab_id, user['id']))
+    # 1. Check if already applied or invited
+    cursor.execute("SELECT id, status, message FROM collaboration_requests WHERE collaboration_id = %s AND user_id = %s", (collab_id, user['id']))
     existing_request = cursor.fetchone()
     if existing_request:
         can_apply = False
-        rejection_reason = f"Already applied (Status: {existing_request['status']})"
-        collab['my_status'] = existing_request['status']
+        if (existing_request.get('message') or '').startswith('Invitation from owner') and existing_request.get('status') == 'pending':
+            collab['invite_pending'] = True
+            collab['my_request_id'] = existing_request.get('id')
+            collab['my_status'] = 'invited'
+            rejection_reason = "Invitation pending"
+        else:
+            rejection_reason = f"Already applied (Status: {existing_request['status']})"
+            collab['invite_pending'] = False
+            collab['my_request_id'] = existing_request.get('id')
+            collab['my_status'] = existing_request['status']
     else:
         collab['my_status'] = None
+        collab['invite_pending'] = False
+        collab['my_request_id'] = None
 
     # Deadline check for non-owner viewers
     if can_apply and user['id'] != collab['faculty_id']:
@@ -1016,11 +1160,12 @@ def faculty_collaboration_details(collab_id):
             FROM collaboration_requests cr
             JOIN users u ON cr.user_id = u.id
             WHERE cr.collaboration_id = %s AND cr.status = 'pending'
+              AND (cr.message IS NULL OR cr.message NOT LIKE 'Invitation from owner%%')
         """, (collab_id,))
         requests = cursor.fetchall()
 
     cursor.close()
-    return render_template('faculty_collaboration_details.html', user=user, collab=collab, can_apply=can_apply, rejection_reason=rejection_reason, requests=requests, recommended_faculty=recommended_faculty, accepted_users=accepted_users, collab_comments=collab_comments, can_comment=can_comment)
+    return render_template('faculty_collaboration_details.html', user=user, collab=collab, can_apply=can_apply, rejection_reason=rejection_reason, requests=requests, recommended_faculty=recommended_faculty, recommended_students=recommended_students, accepted_users=accepted_users, collab_comments=collab_comments, can_comment=can_comment)
 
 @collaboration_bp.route('/faculty/collaboration/<int:collab_id>/apply', methods=['POST'])
 def apply_faculty_collaboration(collab_id):
@@ -1125,6 +1270,50 @@ def invite_faculty_user(collab_id, user_id):
     finally:
         cur2.close()
     return redirect(url_for('collaboration.faculty_collaboration_details', collab_id=collab_id))
+
+@collaboration_bp.route('/collaboration/request/<int:req_id>/respond/<action>', methods=['POST'])
+def respond_collaboration_request(req_id, action):
+    if 'user_id' not in session:
+        return redirect(url_for('auth.login'))
+    if action not in ['accepted', 'rejected']:
+        return redirect(url_for('collaboration.community'))
+    cursor = db.cursor(dictionary=True)
+    try:
+        cursor.execute("""
+            SELECT cr.id, cr.user_id, cr.collaboration_id, cr.status, cr.message, 
+                   fc.max_students, fc.max_faculty
+            FROM collaboration_requests cr
+            JOIN faculty_collaborations fc ON cr.collaboration_id = fc.id
+            WHERE cr.id = %s
+        """, (req_id,))
+        req = cursor.fetchone()
+        if not req or req['user_id'] != session['user_id'] or req['status'] != 'pending':
+            flash("Unauthorized or invalid request.", "danger")
+            return redirect(url_for('collaboration.community'))
+        # Capacity checks on accept
+        if action == 'accepted':
+            cursor.execute("SELECT role FROM users WHERE id = %s", (req['user_id'],))
+            me = cursor.fetchone()
+            cursor.execute("""
+                SELECT COUNT(*) as count FROM collaboration_requests cr
+                JOIN users u ON cr.user_id = u.id
+                WHERE cr.collaboration_id = %s AND cr.status = 'accepted' AND u.role = %s
+            """, (req['collaboration_id'], me['role']))
+            current_count = cursor.fetchone()['count']
+            limit = req['max_students'] if me['role'] == 'student' else req['max_faculty']
+            if limit and limit > 0 and current_count >= limit:
+                flash(f"Limit reached for {me['role']}s. Cannot accept.", "warning")
+                return redirect(url_for('collaboration.faculty_collaboration_details', collab_id=req['collaboration_id']))
+        cursor.execute("UPDATE collaboration_requests SET status = %s WHERE id = %s", (action, req_id))
+        db.commit()
+        flash(f"Request {action}.", "success")
+    except Exception as e:
+        db.rollback()
+        print(f"Error responding to collaboration request: {e}")
+        flash("Error.", "danger")
+    finally:
+        cursor.close()
+    return redirect(url_for('collaboration.faculty_collaboration_details', collab_id=req['collaboration_id']))
 @collaboration_bp.route('/faculty/request/<int:req_id>/manage/<action>', methods=['POST'])
 def manage_faculty_request(req_id, action):
     if 'user_id' not in session:

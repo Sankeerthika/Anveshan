@@ -3,46 +3,47 @@
 {% block title %}{{ collab.title }} | Collaboration{% endblock %}
 
 {% block page_content %}
+<style>
+    .collab-hero{background:linear-gradient(135deg,#f4f7ff 0%,#f8fffb 100%);border-radius:24px;padding:28px;border:1px solid rgba(0,0,0,.05)}
+    .chip{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(0,0,0,.08);padding:6px 12px;border-radius:999px;font-size:.85rem;background:#fff}
+    .meta-row{display:flex;flex-wrap:wrap;gap:8px}
+    .prose p{margin-bottom:1rem}
+    .prose{color:#4b5563;font-size:1rem;line-height:1.8}
+    .section-title{display:flex;align-items:center;gap:.5rem;margin:0 0 .75rem 0}
+    .pill{border-radius:999px;padding:.5rem .9rem;border:1px solid rgba(0,0,0,.06);background:#fff}
+    .msg{background:#f8f9fb;border:1px solid rgba(0,0,0,.06);border-radius:16px;padding:12px 14px}
+    .owner-badge{font-size:.7rem}
+</style>
 <div class="container py-4">
-    <!-- Header Navigation & Status -->
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
-        <div class="d-flex align-items-center gap-3">
-            <a href="{{ url_for('collaboration.faculty_dashboard') if user.role == 'faculty' else url_for('collaboration.community') }}" class="btn btn-outline-secondary rounded-pill">
-                <i class="bi bi-arrow-left me-2"></i>Back
-            </a>
-            <div class="d-flex flex-wrap gap-2">
-                <span class="badge bg-info bg-opacity-10 text-info border border-info rounded-pill px-3 py-2">
-                    <i class="bi bi-file-text me-1"></i>{{ collab.collaboration_type|title }}
-                </span>
-                <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary rounded-pill px-3 py-2">
-                    <i class="bi bi-people me-1"></i>{{ collab.audience|replace('_', ' ')|title }}
-                </span>
-                {% if collab.apply_deadline %}
-                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger rounded-pill px-3 py-2">
-                        <i class="bi bi-calendar-event me-1"></i>Apply by {{ collab.apply_deadline.strftime('%b %d, %Y') }}
-                    </span>
-                {% endif %}
-                {% if collab.status == 'closed' %}
-                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger rounded-pill px-3 py-2">
-                        <i class="bi bi-lock-fill me-1"></i>Closed
-                    </span>
-                {% else %}
-                    <span class="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-3 py-2">
-                        <i class="bi bi-unlock-fill me-1"></i>Open
-                    </span>
-                {% endif %}
+    <div class="collab-hero mb-4">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+            <div class="flex-grow-1">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <a href="{{ url_for('collaboration.faculty_dashboard') if user.role == 'faculty' else url_for('collaboration.community') }}" class="btn btn-light pill">
+                        <i class="bi bi-arrow-left"></i>
+                    </a>
+                    <div class="meta-row">
+                        <span class="chip"><i class="bi bi-file-text"></i>{{ collab.collaboration_type|title }}</span>
+                        <span class="chip"><i class="bi bi-people"></i>{{ collab.audience|replace('_', ' ')|title }}</span>
+                        {% if collab.apply_deadline %}
+                        <span class="chip text-danger border-danger-subtle"><i class="bi bi-calendar-event"></i>Apply by {{ collab.apply_deadline.strftime('%b %d, %Y') }}</span>
+                        {% endif %}
+                        {% if collab.status == 'closed' %}
+                        <span class="chip text-danger border-danger-subtle"><i class="bi bi-lock-fill"></i>Closed</span>
+                        {% else %}
+                        <span class="chip text-success border-success-subtle"><i class="bi bi-unlock-fill"></i>Open</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <h1 class="h2 fw-bold text-dark mb-0">{{ collab.title }}</h1>
             </div>
-        </div>
-        
-        <!-- Faculty Lead Info -->
-        <div class="d-flex align-items-center bg-white p-2 rounded-pill shadow-sm border">
-            <img src="{{ url_for('static', filename='uploads/profile_pics/' + (collab.faculty_photo if collab.faculty_photo else 'default.png')) }}" 
-                 alt="Faculty" 
-                 class="rounded-circle object-fit-cover" 
-                 style="width: 40px; height: 40px;">
-            <div class="ms-3 me-3">
-                <h6 class="mb-0 fw-bold text-dark" style="font-size: 0.9rem;">{{ collab.faculty_name }}</h6>
-                <small class="text-muted" style="font-size: 0.75rem;">Lead Faculty</small>
+            <div class="d-flex align-items-center bg-white p-2 rounded-pill shadow-sm border">
+                <img src="{{ url_for('static', filename='uploads/profile_pics/' + (collab.faculty_photo if collab.faculty_photo else 'default.png')) }}"
+                     alt="Faculty" class="rounded-circle object-fit-cover" style="width: 44px; height: 44px;">
+                <div class="ms-3 me-3">
+                    <div class="fw-bold text-dark" style="font-size: .95rem;">{{ collab.faculty_name }}</div>
+                    <div class="text-muted owner-badge">Lead Faculty</div>
+                </div>
             </div>
         </div>
     </div>
@@ -50,11 +51,13 @@
     <div class="row g-4">
         <!-- Main Content Column -->
         <div class="col-lg-8">
-            <!-- Project Details Card -->
             <div class="card shadow-sm border-0 rounded-4 mb-4">
                 <div class="card-body p-4">
-                    <h1 class="h2 fw-bold text-dark mb-3">{{ collab.title }}</h1>
-                    <div class="text-muted" style="line-height: 1.7;">
+                    <div class="section-title">
+                        <i class="bi bi-info-circle text-primary"></i>
+                        <h4 class="fw-bold mb-0">Overview</h4>
+                    </div>
+                    <div class="prose">
                         {{ collab.description|replace('\n', '<br>')|safe }}
                     </div>
 
@@ -65,15 +68,18 @@
                     
                     {% if must or nice or agg %}
                         <div class="mt-4 pt-4 border-top">
-                            <h5 class="fw-bold text-dark mb-3"><i class="bi bi-tools me-2 text-primary"></i>Required Skills</h5>
+                            <div class="section-title">
+                                <i class="bi bi-tools text-primary"></i>
+                                <h5 class="fw-bold mb-0">Required Skills</h5>
+                            </div>
                             <div class="d-flex flex-wrap gap-2">
                                 {% for skill in (must or agg).split(',') if skill.strip() %}
-                                    <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill border border-primary border-opacity-25">
+                                    <span class="pill text-primary border-primary-subtle">
                                         {{ skill.strip() }}
                                     </span>
                                 {% endfor %}
                                 {% for skill in nice.split(',') if skill.strip() %}
-                                    <span class="badge bg-light text-dark px-3 py-2 rounded-pill border">
+                                    <span class="pill">
                                         {{ skill.strip() }} (Nice to have)
                                     </span>
                                 {% endfor %}
@@ -89,7 +95,20 @@
                 <div class="card-body p-4">
                     <h4 class="fw-bold mb-3">Join Collaboration</h4>
                     
-                    {% if collab.my_status == 'accepted' %}
+                    {% if collab.invite_pending %}
+                        <div class="alert alert-info d-flex align-items-center border-0 shadow-sm rounded-3 mb-3">
+                            <i class="bi bi-envelope-open fs-4 me-3"></i>
+                            <div>You have been invited by the owner. Accept to join this collaboration.</div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <form action="{{ url_for('collaboration.respond_collaboration_request', req_id=collab.my_request_id, action='accepted') }}" method="POST">
+                                <button type="submit" class="btn btn-success rounded-pill"><i class="bi bi-check-lg me-1"></i>Accept Invitation</button>
+                            </form>
+                            <form action="{{ url_for('collaboration.respond_collaboration_request', req_id=collab.my_request_id, action='rejected') }}" method="POST">
+                                <button type="submit" class="btn btn-outline-danger rounded-pill"><i class="bi bi-x-lg me-1"></i>Reject</button>
+                            </form>
+                        </div>
+                    {% elif collab.my_status == 'accepted' %}
                         <div class="alert alert-success d-flex align-items-center border-0 shadow-sm rounded-3">
                             <i class="bi bi-check-circle-fill fs-4 me-3"></i>
                             <div>You are a collaborator on this project!</div>
@@ -138,7 +157,7 @@
                             <div class="d-flex gap-3">
                                 <img src="{{ url_for('static', filename='uploads/profile_pics/' + (c.user_photo if c.user_photo else 'default.png')) }}" 
                                      class="rounded-circle object-fit-cover" width="40" height="40" alt="{{ c.user_name }}">
-                                <div class="flex-grow-1 bg-light p-3 rounded-4">
+                                <div class="flex-grow-1 msg">
                                     <div class="d-flex justify-content-between align-items-center mb-1">
                                         <h6 class="fw-bold mb-0">{{ c.user_name }}</h6>
                                         <small class="text-muted">{{ c.created_at.strftime('%b %d, %H:%M') }}</small>
@@ -158,10 +177,8 @@
                     {% if can_comment and collab.status != 'closed' %}
                     <form action="{{ url_for('collaboration.add_collaboration_comment', collab_id=collab.id) }}" method="POST" class="mt-3">
                         <div class="input-group">
-                            <textarea name="content" rows="2" class="form-control bg-light border-0" placeholder="Type a message..." required style="resize: none;"></textarea>
-                            <button type="submit" class="btn btn-primary px-4">
-                                <i class="bi bi-send"></i>
-                            </button>
+                            <textarea name="content" rows="2" class="form-control bg-light border-0" placeholder="Write a message..." required style="resize: none;"></textarea>
+                            <button type="submit" class="btn btn-primary px-4"><i class="bi bi-send"></i></button>
                         </div>
                     </form>
                     {% elif not can_comment %}
@@ -173,17 +190,32 @@
 
         <!-- Sidebar Column -->
         <div class="col-lg-4">
-            <!-- Stats Card -->
             <div class="card shadow-sm border-0 rounded-4 mb-4">
                 <div class="card-body p-4">
-                    <h5 class="fw-bold mb-3">Capacity</h5>
+                    <div class="section-title">
+                        <i class="bi bi-speedometer2 text-primary"></i>
+                        <h5 class="fw-bold mb-0">At a Glance</h5>
+                    </div>
+                    {% if collab.apply_deadline %}
+                    <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-danger bg-opacity-10 p-2 rounded-circle me-3">
+                                <i class="bi bi-calendar-event text-danger"></i>
+                            </div>
+                            <div>
+                                <div class="small text-muted">Deadline</div>
+                                <div class="fw-bold">{{ collab.apply_deadline.strftime('%b %d, %Y') }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
                     <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
                         <div class="d-flex align-items-center">
                             <div class="bg-primary bg-opacity-10 p-2 rounded-circle me-3">
                                 <i class="bi bi-mortarboard text-primary"></i>
                             </div>
                             <div>
-                                <div class="small text-muted">Faculty</div>
+                                <div class="small text-muted">Faculty Capacity</div>
                                 <div class="fw-bold">{{ collab.current_faculty }} / {{ collab.max_faculty if collab.max_faculty > 0 else '∞' }}</div>
                             </div>
                         </div>
@@ -194,7 +226,7 @@
                                 <i class="bi bi-backpack text-success"></i>
                             </div>
                             <div>
-                                <div class="small text-muted">Students</div>
+                                <div class="small text-muted">Student Capacity</div>
                                 <div class="fw-bold">{{ collab.current_students }} / {{ collab.max_students if collab.max_students > 0 else '∞' }}</div>
                             </div>
                         </div>
@@ -202,7 +234,6 @@
                 </div>
             </div>
 
-            <!-- Manage Collaboration (Owner Only) -->
             {% if user.id == collab.faculty_id %}
             <div class="card shadow-sm border-0 rounded-4 mb-4 border-start border-primary border-4">
                 <div class="card-body p-4">
@@ -215,6 +246,9 @@
                             </button>
                         </form>
                         {% endif %}
+                        <a href="{{ url_for('collaboration.edit_faculty_collaboration', collab_id=collab.id) }}" class="btn btn-sm btn-outline-primary rounded-pill">
+                            <i class="bi bi-pencil-square me-1"></i>Edit
+                        </a>
                     </div>
                     
                     {% if requests %}
@@ -249,7 +283,6 @@
                 </div>
             </div>
 
-            <!-- Recommended Collaborators -->
             <div class="card shadow-sm border-0 rounded-4 mb-4">
                 <div class="card-header bg-white border-bottom py-3">
                     <h5 class="card-title fw-bold mb-0">Recommended</h5>
@@ -290,14 +323,54 @@
             </div>
             {% endif %}
 
-            <!-- Members List -->
+            {% if user.id == collab.faculty_id and collab.audience in ['students_only','both'] %}
+            <div class="card shadow-sm border-0 rounded-4 mb-4">
+                <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="card-title fw-bold mb-0">Recommended Students</h5>
+                    <span class="badge bg-primary-subtle text-primary">{{ recommended_students|length }}</span>
+                </div>
+                <div class="card-body p-3">
+                    {% if recommended_students %}
+                        <div class="d-flex flex-column gap-3">
+                            {% for stu in recommended_students %}
+                            <div class="d-flex align-items-center gap-3 p-2 hover-bg-light rounded-3 transition-all">
+                                <img src="{{ url_for('static', filename='uploads/profile_pics/' + (stu.profile_photo if stu.profile_photo else 'default.png')) }}" 
+                                     class="rounded-circle object-fit-cover" width="40" height="40" alt="{{ stu.name }}">
+                                <div class="flex-grow-1 overflow-hidden">
+                                    <h6 class="mb-0 text-truncate fw-bold" style="font-size: 0.9rem;">{{ stu.name }}</h6>
+                                    <div class="d-flex align-items-center gap-2 small">
+                                        <span class="text-success fw-bold">{{ stu.match_percent }}% Match</span>
+                                    </div>
+                                </div>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-light rounded-circle" data-bs-toggle="dropdown">
+                                        <i class="bi bi-three-dots-vertical"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                                        <li><a class="dropdown-item" href="{{ url_for('collaboration.view_profile', profile_id=stu.id) }}">View Profile</a></li>
+                                        <li>
+                                            <form action="{{ url_for('collaboration.invite_faculty_user', collab_id=collab.id, user_id=stu.id) }}" method="POST">
+                                                <button type="submit" class="dropdown-item">Invite</button>
+                                            </form>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted small text-center mb-0">No matching students found.</p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
             <div class="card shadow-sm border-0 rounded-4">
                 <div class="card-header bg-white border-bottom py-3">
                     <h5 class="card-title fw-bold mb-0">Team Members</h5>
                 </div>
                 <div class="card-body p-3">
                     <div class="d-flex flex-column gap-3">
-                        <!-- Owner -->
                         <div class="d-flex align-items-center gap-3">
                             <div class="position-relative">
                                 <img src="{{ url_for('static', filename='uploads/profile_pics/' + (collab.faculty_photo if collab.faculty_photo else 'default.png')) }}" 

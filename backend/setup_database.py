@@ -414,7 +414,7 @@ def setup_tables():
     for t in [
         "users","events","otp_codes","personal_projects","project_requests","follows","project_comments",
         "faculty_collaborations","collaboration_requests","event_registrations","event_team_members",
-        "clubs","club_announcements","team_requests","join_requests"
+        "clubs","club_announcements","team_requests","join_requests","event_questions"
     ]:
         try:
             cursor.execute(f"ALTER TABLE {t} CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci")

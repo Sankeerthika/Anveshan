@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Create Collaboration | Anveshan{% endblock %}
+{% block title %}{{ 'Edit Collaboration' if is_edit else 'Create Collaboration' }} | Anveshan{% endblock %}
 
 {% block page_content %}
 <div class="container py-4">
@@ -8,30 +8,28 @@
         <div class="col-lg-8">
             <div class="card shadow-sm border-0 rounded-4">
                 <div class="card-body p-4 p-md-5">
-                    <!-- Header -->
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <div>
-                            <h1 class="h3 fw-bold text-dark mb-1">Create New Collaboration</h1>
-                            <p class="text-muted mb-0">Set up a professional collaboration with clear roles and requirements.</p>
+                            <h1 class="h3 fw-bold text-dark mb-1">{{ 'Edit Collaboration' if is_edit else 'Create New Collaboration' }}</h1>
+                            <p class="text-muted mb-0">{{ 'Update details and requirements.' if is_edit else 'Set up a professional collaboration with clear roles and requirements.' }}</p>
                         </div>
                         <a href="{{ url_for('collaboration.faculty_dashboard') }}" class="btn btn-outline-secondary rounded-pill">
                             <i class="bi bi-x-lg"></i>
                         </a>
                     </div>
 
-                    <form id="create-collab-form" action="{{ url_for('collaboration.create_faculty_collaboration') }}" method="POST" novalidate>
-                        <!-- Basic Info -->
+                    <form id="create-collab-form" action="{{ url_for('collaboration.edit_faculty_collaboration', collab_id=collab.id) if is_edit else url_for('collaboration.create_faculty_collaboration') }}" method="POST" novalidate>
                         <div class="row g-4 mb-4">
                             <div class="col-12">
                                 <label for="title" class="form-label fw-bold">Title</label>
-                                <input type="text" name="title" id="title" required class="form-control form-control-lg bg-light border-0" placeholder="Concise, descriptive title">
+                                <input type="text" name="title" id="title" required class="form-control form-control-lg bg-light border-0" placeholder="Concise, descriptive title" value="{{ collab.title if is_edit else '' }}">
                             </div>
                             
                             <div class="col-12">
                                 <label class="form-label fw-bold">Collaboration Type</label>
                                 <div class="row g-3">
                                     <div class="col-md-6">
-                                        <input type="radio" class="btn-check" name="type" id="type_article" value="article" checked>
+                                        <input type="radio" class="btn-check" name="type" id="type_article" value="article" {{ 'checked' if not is_edit or (is_edit and collab.collaboration_type == 'article') }}>
                                         <label class="btn btn-outline-primary w-100 p-3 rounded-3 text-start d-flex align-items-center" for="type_article">
                                             <i class="bi bi-file-text fs-4 me-3"></i>
                                             <div>
@@ -41,7 +39,7 @@
                                         </label>
                                     </div>
                                     <div class="col-md-6">
-                                        <input type="radio" class="btn-check" name="type" id="type_project" value="project">
+                                        <input type="radio" class="btn-check" name="type" id="type_project" value="project" {{ 'checked' if is_edit and collab.collaboration_type == 'project' }}>
                                         <label class="btn btn-outline-primary w-100 p-3 rounded-3 text-start d-flex align-items-center" for="type_project">
                                             <i class="bi bi-kanban fs-4 me-3"></i>
                                             <div>
@@ -55,17 +53,16 @@
 
                             <div class="col-12">
                                 <label for="description" class="form-label fw-bold">Description & Goals</label>
-                                <textarea name="description" id="description" rows="5" required class="form-control bg-light border-0" placeholder="Outline objectives, scope, expected outcomes, and timelines."></textarea>
+                                <textarea name="description" id="description" rows="5" required class="form-control bg-light border-0" placeholder="Outline objectives, scope, expected outcomes, and timelines.">{{ collab.description if is_edit else '' }}</textarea>
                             </div>
                         </div>
 
-                        <!-- Audience & Requirements -->
                         <div class="bg-light p-4 rounded-4 mb-4 border">
                             <h5 class="fw-bold mb-3"><i class="bi bi-people-fill me-2 text-primary"></i>Target Audience</h5>
                             
                             <div class="row g-3 mb-4">
                                 <div class="col-md-4">
-                                    <input type="radio" class="btn-check" name="audience" id="audience_faculty" value="faculty_only" onclick="toggleFields('faculty')" checked>
+                                    <input type="radio" class="btn-check" name="audience" id="audience_faculty" value="faculty_only" onclick="toggleFields('faculty')" {{ 'checked' if (not is_edit and True) or (is_edit and collab.audience == 'faculty_only') }}>
                                     <label class="btn btn-white border w-100 p-3 rounded-3 text-center shadow-sm h-100" for="audience_faculty">
                                         <i class="bi bi-mortarboard fs-3 d-block mb-2 text-primary"></i>
                                         <span class="fw-bold d-block">Faculty Only</span>
@@ -73,7 +70,7 @@
                                     </label>
                                 </div>
                                 <div class="col-md-4">
-                                    <input type="radio" class="btn-check" name="audience" id="audience_students" value="students_only" onclick="toggleFields('students')">
+                                    <input type="radio" class="btn-check" name="audience" id="audience_students" value="students_only" onclick="toggleFields('students')" {{ 'checked' if is_edit and collab.audience == 'students_only' }}>
                                     <label class="btn btn-white border w-100 p-3 rounded-3 text-center shadow-sm h-100" for="audience_students">
                                         <i class="bi bi-backpack fs-3 d-block mb-2 text-success"></i>
                                         <span class="fw-bold d-block">Students Only</span>
@@ -81,7 +78,7 @@
                                     </label>
                                 </div>
                                 <div class="col-md-4">
-                                    <input type="radio" class="btn-check" name="audience" id="audience_both" value="both" onclick="toggleFields('both')">
+                                    <input type="radio" class="btn-check" name="audience" id="audience_both" value="both" onclick="toggleFields('both')" {{ 'checked' if is_edit and collab.audience == 'both' }}>
                                     <label class="btn btn-white border w-100 p-3 rounded-3 text-center shadow-sm h-100" for="audience_both">
                                         <i class="bi bi-collection fs-3 d-block mb-2 text-info"></i>
                                         <span class="fw-bold d-block">Mixed Team</span>
@@ -90,37 +87,35 @@
                                 </div>
                             </div>
 
-                            <!-- Student Limits -->
                             <div id="student-limits" class="d-none border-top pt-3 mt-3">
                                 <h6 class="fw-bold text-success mb-3">Student Requirements</h6>
                                 <div class="row g-3">
                                     <div class="col-md-4">
                                         <label for="max_students" class="form-label">Max Students</label>
-                                        <input type="number" name="max_students" id="max_students" min="0" value="0" class="form-control">
+                                        <input type="number" name="max_students" id="max_students" min="0" value="{{ collab.max_students if is_edit else 0 }}" class="form-control">
                                     </div>
                                     <div class="col-md-8">
                                         <label for="required_skills_must" class="form-label">Must-Have Skills</label>
-                                        <input type="text" name="required_skills_must" id="required_skills_must" placeholder="e.g. Python, AI, React" class="form-control">
+                                        <input type="text" name="required_skills_must" id="required_skills_must" placeholder="e.g. Python, AI, React" class="form-control" value="{{ (collab.required_skills_must or collab.must_have_skills) if is_edit else '' }}">
                                         <div class="form-text">Comma-separated skills required to be eligible.</div>
                                     </div>
                                     <div class="col-12">
                                         <label for="required_skills_nice" class="form-label">Nice-to-Have Skills</label>
-                                        <input type="text" name="required_skills_nice" id="required_skills_nice" placeholder="e.g. Writing, UI/UX" class="form-control">
+                                        <input type="text" name="required_skills_nice" id="required_skills_nice" placeholder="e.g. Writing, UI/UX" class="form-control" value="{{ (collab.required_skills_nice or collab.nice_to_have_skills) if is_edit else '' }}">
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Faculty Limits -->
                             <div id="faculty-limits" class="d-none border-top pt-3 mt-3">
                                 <h6 class="fw-bold text-primary mb-3">Faculty Requirements</h6>
                                 <div class="row g-3">
                                     <div class="col-md-4">
                                         <label for="max_faculty" class="form-label">Max Faculty</label>
-                                        <input type="number" name="max_faculty" id="max_faculty" min="0" value="0" class="form-control">
+                                        <input type="number" name="max_faculty" id="max_faculty" min="0" value="{{ collab.max_faculty if is_edit else 0 }}" class="form-control">
                                     </div>
                                     <div class="col-md-8 d-flex align-items-center pt-4">
                                         <div class="form-check form-switch">
-                                            <input class="form-check-input" type="checkbox" id="strict_visibility" name="strict_visibility">
+                                            <input class="form-check-input" type="checkbox" id="strict_visibility" name="strict_visibility" {{ 'checked' if is_edit and ((collab.strict_visibility or 0) == 1 or (collab.hide_non_matching or 0) == 1) }}>
                                             <label class="form-check-label" for="strict_visibility">Hide from non-matching faculty in listings</label>
                                         </div>
                                     </div>
@@ -128,24 +123,24 @@
                             </div>
                         </div>
 
-                        <!-- Application Deadline -->
                         <div class="bg-light p-4 rounded-4 mb-4 border">
                             <h5 class="fw-bold mb-3"><i class="bi bi-calendar-event me-2 text-danger"></i>Application Deadline</h5>
                             <div class="row g-3">
                                 <div class="col-md-6">
                                     <label for="apply_deadline" class="form-label">Apply Until</label>
-                                    <input type="date" name="apply_deadline" id="apply_deadline" class="form-control">
+                                    <input type="date" name="apply_deadline" id="apply_deadline" class="form-control" value="{{ (collab.apply_deadline|string)[:10] if is_edit and collab.apply_deadline else '' }}">
                                     <div class="form-text">After this date, others won’t see the apply link.</div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Submit -->
                         <div class="d-grid d-md-flex justify-content-md-end gap-2">
                             <a href="{{ url_for('collaboration.faculty_dashboard') }}" class="btn btn-light rounded-pill px-4">Cancel</a>
-                            <button type="submit" class="btn btn-primary rounded-pill px-5 shadow-sm">
-                                <i class="bi bi-plus-lg me-2"></i>Create Collaboration
-                            </button>
+                            {% if is_edit %}
+                                <button type="submit" class="btn btn-primary rounded-pill px-5 shadow-sm"><i class="bi bi-save me-2"></i>Save Changes</button>
+                            {% else %}
+                                <button type="submit" class="btn btn-primary rounded-pill px-5 shadow-sm"><i class="bi bi-plus-lg me-2"></i>Create Collaboration</button>
+                            {% endif %}
                         </div>
                     </form>
                 </div>

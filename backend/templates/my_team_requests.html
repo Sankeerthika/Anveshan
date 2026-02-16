@@ -30,6 +30,13 @@
                                     <span class="badge bg-warning-subtle text-warning rounded-pill">Pending</span>
                                 {% endif %}
                             </div>
+                            {% if jr.team_request_id %}
+                            <div class="mb-3">
+                                <a href="{{ url_for('find_team.team_chat', team_request_id=jr.team_request_id) }}" class="btn btn-sm btn-outline-primary">
+                                    Open Team Chat
+                                </a>
+                            </div>
+                            {% endif %}
 
                             <div class="mb-3 small text-muted">
                                 <div class="mb-1">

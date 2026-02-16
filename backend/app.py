@@ -68,4 +68,4 @@ def home():
 if __name__ == "__main__":
     app.jinja_env.auto_reload = True
     app.config['TEMPLATES_AUTO_RELOAD'] = True
-    app.run(debug=True, use_reloader=True, use_debugger=True)
+    app.run(host="127.0.0.1", port=int(os.getenv("PORT", 5000)), debug=True, use_reloader=False)

@@ -17,7 +17,7 @@ def get_event_stats(cursor, club_id, event_type):
             cursor.execute("""
                 SELECT COUNT(*) AS total
                 FROM information_schema.COLUMNS 
-                WHERE TABLE_SCHEMA = DATABASE() 
+                WHERE BINARY TABLE_SCHEMA = BINARY DATABASE() 
                   AND TABLE_NAME = 'events' 
                   AND COLUMN_NAME = %s
             """, (col,))
@@ -115,7 +115,7 @@ def club_dashboard():
             SELECT q.*, e.title AS event_title, e.event_type, u.name AS student_name
             FROM event_questions q
             JOIN events e ON q.event_id = e.id
-            LEFT JOIN users u ON u.email = q.student_email
+            LEFT JOIN users u ON u.email = (q.student_email COLLATE utf8mb4_unicode_ci)
             WHERE e.created_by = %s
               AND q.created_at >= %s
             ORDER BY q.created_at DESC

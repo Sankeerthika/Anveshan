@@ -44,7 +44,7 @@ try:
             status ENUM('open','answered') DEFAULT 'open',
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             answered_at DATETIME NULL
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     ''')
     db.commit()
     c.close()
@@ -61,7 +61,7 @@ def events():
         cursor.execute("""
             SELECT COUNT(*) AS total
             FROM information_schema.COLUMNS 
-            WHERE TABLE_SCHEMA = DATABASE() 
+            WHERE BINARY TABLE_SCHEMA = BINARY DATABASE() 
               AND TABLE_NAME = 'events' 
               AND COLUMN_NAME = %s
         """, (col,))

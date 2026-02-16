@@ -1,7 +1,26 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash, current_app
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash, current_app, jsonify
+import mysql.connector
 from backend.db import db
 
 find_team_bp = Blueprint('find_team', __name__)
+
+try:
+    c = db.cursor()
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS team_chat_messages (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            team_request_id INT NOT NULL,
+            user_id INT NOT NULL,
+            message TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (team_request_id) REFERENCES team_requests(id) ON DELETE CASCADE,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    """)
+    db.commit()
+    c.close()
+except Exception:
+    pass
 
 # =====================================================
 # FIND TEAM / CREATE TEAM REQUEST
@@ -81,9 +100,13 @@ def find_team():
     user_branch = (user.get('branch') or "").strip()
 
     base_sql = """
-        SELECT tr.*, e.title AS event_title
+        SELECT tr.*,
+               e.title AS event_title,
+               u.id AS owner_id,
+               u.profile_photo AS owner_photo
         FROM team_requests tr
         JOIN events e ON tr.event_id = e.id
+        LEFT JOIN users u ON LOWER(u.email) = LOWER(tr.email)
         WHERE tr.email != %s AND tr.required_size > 0
     """
     params = [user_email]
@@ -148,9 +171,12 @@ def join_team(request_id):
     user = cursor.fetchone()
 
     cursor.execute("""
-        SELECT tr.*, e.title AS event_title
+        SELECT tr.*,
+               e.title AS event_title,
+               u.id AS owner_id
         FROM team_requests tr
         JOIN events e ON tr.event_id = e.id
+        LEFT JOIN users u ON LOWER(u.email) = LOWER(tr.email)
         WHERE tr.id=%s
     """, (request_id,))
     team_request = cursor.fetchone()
@@ -220,6 +246,7 @@ def my_team_requests():
             jr.year,
             jr.status,
             tr.name AS team_owner,
+            tr.id AS team_request_id,
             e.title AS event_title
         FROM join_requests jr
         JOIN team_requests tr ON jr.team_request_id = tr.id
@@ -236,6 +263,248 @@ def my_team_requests():
         join_requests=join_requests,
         user=user
     )
+
+@find_team_bp.route('/team-chats')
+def team_chats():
+    if 'user_id' not in session or session.get('role') != 'student':
+        return redirect(url_for('auth.login'))
+    user_email = session.get('user_email')
+    cursor = db.cursor(dictionary=True)
+    # Rooms owned by user
+    cursor.execute("""
+        SELECT tr.id, tr.name, e.title AS event_title
+        FROM team_requests tr
+        JOIN events e ON tr.event_id = e.id
+        WHERE LOWER(tr.email) = LOWER(%s)
+        ORDER BY tr.id DESC
+    """, (user_email,))
+    owned = cursor.fetchall() or []
+    # Rooms where user is accepted member
+    cursor.execute("""
+        SELECT DISTINCT tr.id, tr.name, e.title AS event_title
+        FROM join_requests jr
+        JOIN team_requests tr ON jr.team_request_id = tr.id
+        JOIN events e ON tr.event_id = e.id
+        WHERE jr.email = %s AND jr.status='accepted'
+        ORDER BY tr.id DESC
+    """, (user_email,))
+    member = cursor.fetchall() or []
+    # Merge by id
+    rooms_map = {}
+    for r in owned + member:
+        rooms_map[r['id']] = r
+    rooms = []
+    # For each room, compute members and is_over flag
+    for room_id, room in rooms_map.items():
+        # is_over
+        cursor.execute("""
+            SELECT CASE
+                     WHEN e.end_time IS NOT NULL THEN (e.end_time < NOW())
+                     WHEN e.deadline IS NOT NULL THEN (e.deadline < CURDATE())
+                     ELSE 0
+                   END AS is_over
+            FROM events e
+            JOIN team_requests tr2 ON tr2.event_id = e.id
+            WHERE tr2.id=%s
+        """, (room_id,))
+        over_row = cursor.fetchone() or {}
+        is_over = bool(over_row.get('is_over'))
+        # owner
+        cursor.execute("""
+            SELECT u.name, u.email
+            FROM users u
+            JOIN team_requests tr ON LOWER(u.email)=LOWER(tr.email)
+            WHERE tr.id=%s
+        """, (room_id,))
+        owner_row = cursor.fetchone()
+        owner_name = (owner_row and owner_row.get('name')) or None
+        owner_email = (owner_row and owner_row.get('email')) or None
+        if not owner_name:
+            cursor.execute("SELECT name, email FROM team_requests WHERE id=%s", (room_id,))
+            tr_fallback = cursor.fetchone()
+            owner_name = tr_fallback and tr_fallback.get('name')
+            owner_email = tr_fallback and tr_fallback.get('email')
+        # accepted members
+        cursor.execute("""
+            SELECT COALESCE(u.name, jr.name) AS name, jr.email
+            FROM join_requests jr
+            LEFT JOIN users u ON LOWER(u.email)=LOWER(jr.email)
+            WHERE jr.team_request_id=%s AND jr.status='accepted'
+            ORDER BY name ASC
+        """, (room_id,))
+        members = cursor.fetchall() or []
+        rooms.append({
+            'id': room_id,
+            'event_title': room.get('event_title'),
+            'team_name': f"{room.get('name')}'s Team" if room.get('name') else 'Team',
+            'owner_name': owner_name,
+            'owner_email': owner_email,
+            'members': members,
+            'is_over': is_over
+        })
+    cursor.close()
+    # Sort with active first
+    rooms.sort(key=lambda r: (r['is_over'], -r['id']))
+    return render_template('team_chats.html', rooms=rooms)
+
+@find_team_bp.route('/team-chat/<int:team_request_id>')
+def team_chat(team_request_id):
+    if 'user_id' not in session or session.get('role') != 'student':
+        return redirect(url_for('auth.login'))
+    cursor = db.cursor(dictionary=True)
+    cursor.execute("""
+        SELECT tr.*, e.deadline, e.end_time
+        FROM team_requests tr
+        JOIN events e ON tr.event_id = e.id
+        WHERE tr.id=%s
+    """, (team_request_id,))
+    tr = cursor.fetchone()
+    if not tr:
+        cursor.close()
+        return redirect(url_for('find_team.find_team'))
+    is_owner = str(tr.get('email') or '').strip().lower() == str(session.get('user_email') or '').strip().lower()
+    if not is_owner:
+        cursor.execute("""
+            SELECT id FROM join_requests
+            WHERE team_request_id=%s AND email=%s AND status='accepted'
+        """, (team_request_id, session.get('user_email')))
+        mem = cursor.fetchone()
+        if not mem:
+            cursor.close()
+            return redirect(url_for('find_team.find_team'))
+    cursor.execute("SELECT NOW()")
+    now_row = cursor.fetchone()
+    cursor.execute("""
+        SELECT CASE
+                 WHEN e.end_time IS NOT NULL THEN (e.end_time < NOW())
+                 WHEN e.deadline IS NOT NULL THEN (e.deadline < CURDATE())
+                 ELSE 0
+               END AS is_over
+        FROM events e
+        JOIN team_requests tr2 ON tr2.event_id = e.id
+        WHERE tr2.id=%s
+    """, (team_request_id,))
+    over_row = cursor.fetchone()
+    if over_row and (over_row.get('is_over') == 1 or over_row.get('is_over') is True):
+        try:
+            cursor2 = db.cursor()
+            cursor2.execute("DELETE FROM team_chat_messages WHERE team_request_id=%s", (team_request_id,))
+            db.commit()
+            cursor2.close()
+        except Exception:
+            db.rollback()
+        cursor.close()
+        flash("This team's chat has ended.", "info")
+        return redirect(url_for('find_team.find_team'))
+    cursor.execute("""
+        SELECT m.id, m.message, m.created_at, u.name AS user_name, u.profile_photo
+        FROM team_chat_messages m
+        JOIN users u ON u.id = m.user_id
+        WHERE m.team_request_id=%s
+        ORDER BY m.created_at ASC, m.id ASC
+    """, (team_request_id,))
+    messages = cursor.fetchall()
+    cursor.close()
+    return render_template('team_chat.html', team_request=tr, messages=messages)
+
+@find_team_bp.route('/team-chat/<int:team_request_id>/send', methods=['POST'])
+def team_chat_send(team_request_id):
+    if 'user_id' not in session or session.get('role') != 'student':
+        return redirect(url_for('auth.login'))
+    msg = (request.form.get('message') or '').strip()
+    if not msg:
+        return redirect(url_for('find_team.team_chat', team_request_id=team_request_id))
+    cursor = db.cursor(dictionary=True)
+    cursor.execute("""
+        SELECT tr.*, e.deadline, e.end_time
+        FROM team_requests tr
+        JOIN events e ON tr.event_id = e.id
+        WHERE tr.id=%s
+    """, (team_request_id,))
+    tr = cursor.fetchone()
+    if not tr:
+        cursor.close()
+        return redirect(url_for('find_team.find_team'))
+    is_owner = str(tr.get('email') or '').strip().lower() == str(session.get('user_email') or '').strip().lower()
+    if not is_owner:
+        cursor.execute("""
+            SELECT id FROM join_requests
+            WHERE team_request_id=%s AND email=%s AND status='accepted'
+        """, (team_request_id, session.get('user_email')))
+        mem = cursor.fetchone()
+        if not mem:
+            cursor.close()
+            return redirect(url_for('find_team.find_team'))
+    cursor.execute("""
+        SELECT CASE
+                 WHEN e.end_time IS NOT NULL THEN (e.end_time < NOW())
+                 WHEN e.deadline IS NOT NULL THEN (e.deadline < CURDATE())
+                 ELSE 0
+               END AS is_over
+        FROM events e
+        JOIN team_requests tr2 ON tr2.event_id = e.id
+        WHERE tr2.id=%s
+    """, (team_request_id,))
+    over_row = cursor.fetchone()
+    if over_row and (over_row.get('is_over') == 1 or over_row.get('is_over') is True):
+        cursor.close()
+        flash("This team's chat has ended.", "info")
+        return redirect(url_for('find_team.find_team'))
+    try:
+        cursor2 = db.cursor()
+        cursor2.execute("""
+            INSERT INTO team_chat_messages (team_request_id, user_id, message)
+            VALUES (%s,%s,%s)
+        """, (team_request_id, session['user_id'], msg))
+        db.commit()
+        cursor2.close()
+    except Exception:
+        db.rollback()
+    cursor.close()
+    return redirect(url_for('find_team.team_chat', team_request_id=team_request_id))
+
+@find_team_bp.route('/team-chat/<int:team_request_id>/messages')
+def team_chat_messages(team_request_id):
+    try:
+        if 'user_id' not in session or session.get('role') != 'student':
+            return jsonify([])
+        cursor = db.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT tr.email FROM team_requests tr WHERE tr.id=%s
+        """, (team_request_id,))
+        tr = cursor.fetchone()
+        if not tr:
+            cursor.close()
+            return jsonify([])
+        is_owner = str(tr.get('email') or '').strip().lower() == str(session.get('user_email') or '').strip().lower()
+        if not is_owner:
+            cursor.execute("""
+                SELECT id FROM join_requests
+                WHERE team_request_id=%s AND email=%s AND status='accepted'
+            """, (team_request_id, session.get('user_email')))
+            mem = cursor.fetchone()
+            if not mem:
+                cursor.close()
+                return jsonify([])
+        cursor.execute("""
+            SELECT m.id, m.message, m.created_at, u.name AS user_name
+            FROM team_chat_messages m
+            JOIN users u ON u.id = m.user_id
+            WHERE m.team_request_id=%s
+            ORDER BY m.created_at ASC, m.id ASC
+        """, (team_request_id,))
+        messages = cursor.fetchall()
+        cursor.close()
+        return jsonify(messages)
+    except mysql.connector.Error as err:
+        # On transient connection loss, respond with empty array so UI can retry
+        if getattr(err, "errno", None) in (2006, 2013):
+            try:
+                cursor.close()
+            except Exception:
+                pass
+            return jsonify([])
+        raise
 
 # =====================================================
 # ACCEPT / REJECT JOIN REQUEST
@@ -319,6 +588,7 @@ def my_join_requests():
             jr.phone,
             jr.status,
             tr.name AS team_owner,
+            tr.id AS team_request_id,
             e.title AS event_title
         FROM join_requests jr
         JOIN team_requests tr ON jr.team_request_id = tr.id

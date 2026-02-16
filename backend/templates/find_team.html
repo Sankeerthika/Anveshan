@@ -88,7 +88,15 @@
                                     <div class="card h-100 border bg-light hover-shadow transition-all">
                                         <div class="card-body">
                                             <div class="d-flex justify-content-between align-items-start mb-2">
-                                                <h6 class="fw-bold text-dark mb-0">{{ r.name }}'s Team</h6>
+                                                <h6 class="fw-bold text-dark mb-0">
+                                                    {% if r.owner_id %}
+                                                        <a href="{{ url_for('collaboration.view_profile', profile_id=r.owner_id) }}" class="text-decoration-none text-primary">
+                                                            {{ r.name }}
+                                                        </a>'s Team
+                                                    {% else %}
+                                                        {{ r.name }}'s Team
+                                                    {% endif %}
+                                                </h6>
                                                 <span class="badge bg-primary-subtle text-primary rounded-pill small">
                                                     Need {{ r.required_size }}
                                                 </span>
@@ -99,6 +107,12 @@
                                                     <i class="bi bi-trophy me-2 text-warning"></i>
                                                     <span class="text-truncate">{{ r.event_title }}</span>
                                                 </div>
+                                                {% if session.get('user_email') and r.email and session.get('user_email')|lower == r.email|lower %}
+                                                <div class="d-flex align-items-center text-muted small mb-1">
+                                                    <i class="bi bi-chat-dots me-2 text-primary"></i>
+                                                    <a href="{{ url_for('find_team.team_chat', team_request_id=r.id) }}" class="text-decoration-none">Open Team Chat</a>
+                                                </div>
+                                                {% endif %}
                                                 <div class="d-flex align-items-center text-muted small mb-1">
                                                     <i class="bi bi-laptop me-2"></i>
                                                     <span>{{ r.domain }}</span>
@@ -118,6 +132,13 @@
                                             <a href="{{ url_for('find_team.join_team', request_id=r.id) }}" class="btn btn-sm btn-outline-primary w-100">
                                                 Request to Join
                                             </a>
+                                            {% if r.owner_id %}
+                                            <div class="text-center mt-2">
+                                                <a href="{{ url_for('collaboration.view_profile', profile_id=r.owner_id) }}" class="small text-muted text-decoration-none">
+                                                    View {{ r.name.split(' ')[0] if r.name else 'owner' }}'s profile
+                                                </a>
+                                            </div>
+                                            {% endif %}
                                         </div>
                                     </div>
                                 </div>

@@ -49,7 +49,7 @@ def dashboard():
             cursor.execute("""
                 SELECT COUNT(*) AS total
                 FROM information_schema.COLUMNS 
-                WHERE TABLE_SCHEMA = DATABASE() 
+                WHERE BINARY TABLE_SCHEMA = BINARY DATABASE() 
                   AND TABLE_NAME = 'events' 
                   AND COLUMN_NAME = %s
             """, (col,))
@@ -202,7 +202,7 @@ def dashboard():
             cursor.execute("""
                 SELECT id, question, answer, status, created_at, answered_at
                 FROM event_questions
-                WHERE event_id = %s AND student_email = %s
+                WHERE event_id = %s AND (student_email COLLATE utf8mb4_unicode_ci) = %s
                 ORDER BY created_at DESC
             """, (event['id'], user['email']))
             event['questions'] = cursor.fetchall()

@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Team Chats | Anveshan{% endblock %}
+
+{% block page_content %}
+<div class="container py-4">
+    <div class="mb-4">
+        <h2 class="fw-bold mb-1">Team Chats</h2>
+        <p class="text-muted mb-0">Your current team discussions for hackathons and events.</p>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body">
+            {% if rooms %}
+                <div class="row g-4">
+                    {% for r in rooms %}
+                        <div class="col-md-6">
+                            <div class="card h-100 border-0 bg-light">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h5 class="fw-bold mb-0 text-primary">{{ r.event_title }}</h5>
+                                        {% if r.is_over %}
+                                            <span class="badge bg-secondary">Closed</span>
+                                        {% else %}
+                                            <span class="badge bg-success-subtle text-success">Active</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="text-muted small mb-2">
+                                        <i class="bi bi-people-fill me-1"></i>{{ r.team_name }}
+                                    </div>
+                                    <div class="mb-3">
+                                        <div class="text-muted small">Owner: {{ r.owner_name or 'N/A' }}</div>
+                                        <div class="text-muted small">
+                                            Members:
+                                            {% if r.members and r.members|length > 0 %}
+                                                {% for m in r.members %}
+                                                    <span class="badge bg-white border text-dark me-1">{{ m.name or m.email }}</span>
+                                                {% endfor %}
+                                            {% else %}
+                                                <span class="text-muted">No accepted members yet</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="d-grid">
+                                        {% if r.is_over %}
+                                            <button class="btn btn-secondary" disabled>Chat Closed</button>
+                                        {% else %}
+                                            <a href="{{ url_for('find_team.team_chat', team_request_id=r.id) }}" class="btn btn-primary">
+                                                <i class="bi bi-chat-dots me-1"></i> Open Chat
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <div class="mb-3">
+                        <i class="bi bi-chat-dots text-muted" style="font-size: 3rem; opacity: .6;"></i>
+                    </div>
+                    <h5 class="text-muted">No team chats yet</h5>
+                    <p class="text-muted small">Create a team or get accepted to a team to start chatting.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
