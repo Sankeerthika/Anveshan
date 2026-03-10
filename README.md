@@ -159,7 +159,7 @@ http://127.0.0.1:5000
 ScreenShorts:
 
 
-<img width="874" height="912" alt="{EFAB0600-5D65-4880-B3D2-9A5547A4F9E7}" src="https://github.com/user-attachments/assets/2987c903-c412-4c8d-85df-809198b4701c" />
+
 
 
 
