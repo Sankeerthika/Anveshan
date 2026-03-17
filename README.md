@@ -158,43 +158,43 @@ http://localhost:5000/
 ## 📷 Screenshots
 
 ### 🏠 Home Page
-![Home Page](backend/screenshorts/homepage.png)
+![Home Page](https://raw.githubusercontent.com/Sankeerthika/Anveshan/main/backend/screenshorts/homepage.png)
 
 ### 🔐 Login Page
-![Login Page](backend/screenshorts/loginpage.png)
+![Login Page](https://raw.githubusercontent.com/Sankeerthika/Anveshan/main/backend/screenshorts/loginpage.png)
 
 ### 📝 Register Page
-![Register Page](backend/screenshorts/registerpage.png)
+![Register Page](https://raw.githubusercontent.com/Sankeerthika/Anveshan/main/backend/screenshorts/registerpage.png)
 
 ### 👨‍🎓 Student Dashboard
-![Student Dashboard](backend/screenshorts/students_dashboard.png)
+![Student Dashboard](https://raw.githubusercontent.com/Sankeerthika/Anveshan/main/backend/screenshorts/students_dashboard.png)
 
 ### 👩‍🏫 Faculty Dashboard
-![Faculty Dashboard](backend/screenshorts/faculty_dashboard.png)
+![Faculty Dashboard](https://raw.githubusercontent.com/Sankeerthika/Anveshan/main/backend/screenshorts/faculty_dashboard.png)
 
 ### 🏢 Club Dashboard
-![Club Dashboard](backend/screenshorts/club_dashboard.png)
+![Club Dashboard](https://raw.githubusercontent.com/Sankeerthika/Anveshan/main/backend/screenshorts/club_dashboard.png)
 
 ### 🔍 Explore Events
-![Explore Events](backend/screenshorts/explore_events.png)
+![Explore Events](https://raw.githubusercontent.com/Sankeerthika/Anveshan/main/backend/screenshorts/explore_events.png)
 
 ### 🤝 Team Finder
-![Team Finder](backend/screenshorts/find_team.png)
+![Team Finder](https://raw.githubusercontent.com/Sankeerthika/Anveshan/main/backend/screenshorts/find_team.png)
 
 ### 🌐 Community Page
-![Community](backend/screenshorts/community.png)
+![Community](https://raw.githubusercontent.com/Sankeerthika/Anveshan/main/backend/screenshorts/community.png)
 
 ### 📢 Post Event
-![Post Event](backend/screenshorts/post_event.png)
+![Post Event](https://raw.githubusercontent.com/Sankeerthika/Anveshan/main/backend/screenshorts/post_event.png)
 
 ### 🔬 Collaboration
-![Collaboration](backend/screenshorts/collaboration.png)
+![Collaboration](https://raw.githubusercontent.com/Sankeerthika/Anveshan/main/backend/screenshorts/collaboration.png)
 
 ### 🧾 Collaboration Form
-![Collaboration Form](backend/screenshorts/collaboration_form.png)
+![Collaboration Form](https://raw.githubusercontent.com/Sankeerthika/Anveshan/main/backend/screenshorts/collaboration_form.png)
 
 ### 📊 Team Chart
-![Team Chart](backend/screenshorts/team_chart.png)
+![Team Chart](https://raw.githubusercontent.com/Sankeerthika/Anveshan/main/backend/screenshorts/team_chart.png)
 
 
 
