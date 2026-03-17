@@ -46,6 +46,7 @@ This structured system transforms **random communication into organized collabor
 
 ---
 
+
 # ✨ Key Features
 
 ### 🎯 Skill-Based Team Formation
@@ -70,7 +71,48 @@ Clubs can post events, manage participation, and encourage innovation within the
 All collaboration activities happen in a **single organized platform**, reducing confusion and improving efficiency.
 
 ---
+## 📷 Screenshots
 
+### 🏠 Home Page
+![Home Page](https://raw.githubusercontent.com/Sankeerthika/Anveshan/main/backend/screenshorts/homepage.png)
+
+### 🔐 Login Page
+![Login Page](https://raw.githubusercontent.com/Sankeerthika/Anveshan/main/backend/screenshorts/loginpage.png)
+
+### 📝 Register Page
+![Register Page](https://raw.githubusercontent.com/Sankeerthika/Anveshan/main/backend/screenshorts/registerpage.png)
+
+### 👨‍🎓 Student Dashboard
+![Student Dashboard](https://raw.githubusercontent.com/Sankeerthika/Anveshan/main/backend/screenshorts/students_dashboard.png)
+
+### 👩‍🏫 Faculty Dashboard
+![Faculty Dashboard](https://raw.githubusercontent.com/Sankeerthika/Anveshan/main/backend/screenshorts/faculty_dashboard.png)
+
+### 🏢 Club Dashboard
+![Club Dashboard](https://raw.githubusercontent.com/Sankeerthika/Anveshan/main/backend/screenshorts/club_dashboard.png)
+
+### 🔍 Explore Events
+![Explore Events](https://raw.githubusercontent.com/Sankeerthika/Anveshan/main/backend/screenshorts/explore_events.png)
+
+### 🤝 Team Finder
+![Team Finder](https://raw.githubusercontent.com/Sankeerthika/Anveshan/main/backend/screenshorts/find_team.png)
+
+### 🌐 Community Page
+![Community](https://raw.githubusercontent.com/Sankeerthika/Anveshan/main/backend/screenshorts/community.png)
+
+### 📢 Post Event
+![Post Event](https://raw.githubusercontent.com/Sankeerthika/Anveshan/main/backend/screenshorts/post_event.png)
+
+### 🔬 Collaboration
+![Collaboration](https://raw.githubusercontent.com/Sankeerthika/Anveshan/main/backend/screenshorts/collaboration.png)
+
+### 🧾 Collaboration Form
+![Collaboration Form](https://raw.githubusercontent.com/Sankeerthika/Anveshan/main/backend/screenshorts/collaboration_form.png)
+
+### 📊 Team Chart
+![Team Chart](https://raw.githubusercontent.com/Sankeerthika/Anveshan/main/backend/screenshorts/team_chart.png)
+
+---
 # 🏗 System Architecture
        +----------------------+
        |      Frontend        |
@@ -157,5 +199,4 @@ http://localhost:5000/
 
 ## 📷 Screenshots
 
-![Home](https://raw.githubusercontent.com/Sankeerthika/Anveshan/main/backend/screenshorts/homepage.png)
 
